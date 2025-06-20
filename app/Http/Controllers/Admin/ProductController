@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Services\Product\ProductService;
+use App\Models\Category;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class ProductController extends Controller
+{
+    protected $service;
+
+    public function __construct(ProductService $service)
+    {
+        $this->service = $service;
+    }
+
+    public function index()
+    {
+        $products = $this->service->list();
+        return view('admin.products.index', compact('products'));
+    }
+
+    public function create()
+    {
+        $categories = Category::all();
+        return view('admin.products.create', compact('categories'));
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'category_id' => 'required|exists:categories,id',
+            'image' => 'nullable|image|max:2048',
+            'points_required' => 'required|integer|min:1',
+            'is_offer_pool' => 'required|boolean',
+        ]);
+
+        $this->service->create($data);
+
+        return redirect()->route('admin.products.index')->with('success', 'Product added');
+    }
+
+    public function edit($id)
+    {
+        try {
+            $product = $this->service->show($id);
+            $categories = Category::all();
+            return view('admin.products.edit', compact('product', 'categories'));
+        } catch (ModelNotFoundException) {
+            return back()->with('error', 'Product not found');
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'category_id' => 'required|exists:categories,id',
+            'image' => 'nullable|image|max:2048',
+            'points_required' => 'required|integer|min:1',
+            'is_offer_pool' => 'required|boolean',
+        ]);
+
+        try {
+            $this->service->update($id, $data);
+            return redirect()->route('admin.products.index')->with('success', 'Product updated');
+        } catch (ModelNotFoundException) {
+            return back()->with('error', 'Product not found');
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $this->service->delete($id);
+            return redirect()->route('admin.products.index')->with('success', 'Product deleted');
+        } catch (ModelNotFoundException) {
+            return back()->with('error', 'Product not found');
+        }
+    }
+}
