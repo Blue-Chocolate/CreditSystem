@@ -6,6 +6,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\CreditPackage\CreditPackageService;
+use App\Actions\CreditPackage\IndexCreditPackageAction;
+use App\Actions\CreditPackage\StoreCreditPackageAction;
+use App\Actions\CreditPackage\UpdateCreditPackageAction;
+use App\Actions\CreditPackage\DestroyCreditPackageAction;
 
 class CreditPackageController extends Controller
 {
@@ -16,24 +20,12 @@ class CreditPackageController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(IndexCreditPackageAction $action)
     {
-        return response()->json($this->service->getAll());
+        return response()->json($action->handle($this->service));
     }
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'price_egp' => 'required|numeric',
-            'credit_amount' => 'required|integer',
-            'reward_points' => 'required|integer',
-        ]);
-
-        return response()->json($this->service->create($data));
-    }
-
-    public function update(Request $request, $id)
+    public function store(Request $request, StoreCreditPackageAction $action)
     {
         $data = $request->validate([
             'name' => 'required|string',
@@ -41,14 +33,24 @@ class CreditPackageController extends Controller
             'credit_amount' => 'required|integer',
             'reward_points' => 'required|integer',
         ]);
-
-        return response()->json($this->service->update($id, $data));
+        return response()->json($action->handle($this->service, $data));
     }
 
-    public function destroy($id)
+    public function update(Request $request, $id, UpdateCreditPackageAction $action)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'price_egp' => 'required|numeric',
+            'credit_amount' => 'required|integer',
+            'reward_points' => 'required|integer',
+        ]);
+        return response()->json($action->handle($this->service, $id, $data));
+    }
+
+    public function destroy($id, DestroyCreditPackageAction $action)
     {
         return response()->json([
-            'deleted' => $this->service->delete($id)
+            'deleted' => $action->handle($this->service, $id)
         ]);
     }
 }

@@ -7,6 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Services\User\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Actions\User\IndexUserAction;
+use App\Actions\User\ShowUserAction;
+use App\Actions\User\EditUserAction;
+use App\Actions\User\UpdateUserAction;
+use App\Actions\User\DestroyUserAction;
 
 class UserController extends Controller
 {
@@ -17,55 +22,48 @@ class UserController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(IndexUserAction $action)
     {
-        $users = $this->service->list(15);
+        $users = $action->handle($this->service, 15);
         return view('admin.users.index', compact('users'));
     }
 
-    public function show($id)
+    public function show($id, ShowUserAction $action)
     {
-        try {
-            $user = $this->service->show($id);
+        $user = $action->handle($this->service, $id);
+        if ($user) {
             return view('admin.users.show', compact('user'));
-        } catch (ModelNotFoundException) {
-            return redirect()->back()->with('error', 'User not found.');
         }
+        return redirect()->back()->with('error', 'User not found.');
     }
 
-    public function edit($id)
+    public function edit($id, EditUserAction $action)
     {
-        try {
-            $user = $this->service->show($id);
+        $user = $action->handle($this->service, $id);
+        if ($user) {
             return view('admin.users.edit', compact('user'));
-        } catch (ModelNotFoundException) {
-            return redirect()->back()->with('error', 'User not found.');
         }
+        return redirect()->back()->with('error', 'User not found.');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, UpdateUserAction $action)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'role' => 'required|in:admin,user',
             'points_balance' => 'required|integer|min:0',
         ]);
-
-        try {
-            $this->service->update($id, $data);
+        if ($action->handle($this->service, $id, $data)) {
             return redirect()->route('admin.users.index')->with('success', 'User updated.');
-        } catch (ModelNotFoundException) {
-            return redirect()->back()->with('error', 'User not found.');
         }
+        return redirect()->back()->with('error', 'User not found.');
     }
 
-    public function destroy($id)
+    public function destroy($id, DestroyUserAction $action)
     {
-        try {
-            $this->service->delete($id);
+        if ($action->handle($this->service, $id)) {
             return redirect()->route('admin.users.index')->with('success', 'User deleted.');
-        } catch (ModelNotFoundException) {
-            return redirect()->back()->with('error', 'User not found.');
         }
+        return redirect()->back()->with('error', 'User not found.');
     }
 }

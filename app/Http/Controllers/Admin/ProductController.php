@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -7,6 +6,13 @@ use Illuminate\Http\Request;
 use App\Services\Product\ProductService;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Actions\Product\IndexProductAction;
+use App\Actions\Product\CreateProductAction;
+use App\Actions\Product\StoreProductAction;
+use App\Actions\Product\EditProductAction;
+use App\Actions\Product\UpdateProductAction;
+use App\Actions\Product\DestroyProductAction;
+use App\Actions\Product\ToggleOfferPoolAction;
 
 class ProductController extends Controller
 {
@@ -17,19 +23,19 @@ class ProductController extends Controller
         $this->service = $service;
     }
 
-    public function index()
+    public function index(IndexProductAction $action)
     {
-        $products = $this->service->list();
+        $products = $action->handle($this->service);
         return view('admin.products.index', compact('products'));
     }
 
-    public function create()
+    public function create(CreateProductAction $action)
     {
-        $categories = Category::all();
+        $categories = $action->handle();
         return view('admin.products.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, StoreProductAction $action)
     {
         $data = $request->validate([
             'name' => 'required|string',
@@ -39,24 +45,20 @@ class ProductController extends Controller
             'points_required' => 'required|integer|min:1',
             'is_offer_pool' => 'required|boolean',
         ]);
-
-        $this->service->create($data);
-
+        $action->handle($this->service, $data);
         return redirect()->route('admin.products.index')->with('success', 'Product added');
     }
 
-    public function edit($id)
+    public function edit($id, EditProductAction $action)
     {
-        try {
-            $product = $this->service->show($id);
-            $categories = Category::all();
-            return view('admin.products.edit', compact('product', 'categories'));
-        } catch (ModelNotFoundException) {
-            return back()->with('error', 'Product not found');
+        $result = $action->handle($this->service, $id);
+        if ($result) {
+            return view('admin.products.edit', $result);
         }
+        return back()->with('error', 'Product not found');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, UpdateProductAction $action)
     {
         $data = $request->validate([
             'name' => 'required|string',
@@ -66,22 +68,23 @@ class ProductController extends Controller
             'points_required' => 'required|integer|min:1',
             'is_offer_pool' => 'required|boolean',
         ]);
-
-        try {
-            $this->service->update($id, $data);
+        if ($action->handle($this->service, $id, $data)) {
             return redirect()->route('admin.products.index')->with('success', 'Product updated');
-        } catch (ModelNotFoundException) {
-            return back()->with('error', 'Product not found');
         }
+        return back()->with('error', 'Product not found');
     }
 
-    public function destroy($id)
+    public function destroy($id, DestroyProductAction $action)
     {
-        try {
-            $this->service->delete($id);
+        if ($action->handle($this->service, $id)) {
             return redirect()->route('admin.products.index')->with('success', 'Product deleted');
-        } catch (ModelNotFoundException) {
-            return back()->with('error', 'Product not found');
         }
+        return back()->with('error', 'Product not found');
+    }
+
+    public function toggleOfferPool(Request $request, $id, ToggleOfferPoolAction $action)
+    {
+        $product = $action->handle($id, $request->input('is_offer_pool'));
+        return response()->json(['success' => true, 'is_offer_pool' => $product->is_offer_pool]);
     }
 }
