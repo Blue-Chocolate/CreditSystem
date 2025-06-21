@@ -25,5 +25,9 @@ Route::prefix('admin')->group(function () {
 
 Route::prefix('admin')->group(function () {
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names('admin.products');
+    Route::get('products/{id}', [\App\Http\Controllers\Admin\ProductController::class, 'show'])->name('admin.products.show');
     Route::post('products/{id}/toggle-offer-pool', [\App\Http\Controllers\Admin\ProductController::class, 'toggleOfferPool']);
 });
+
+Route::get('/rag', [\App\Http\Controllers\RagController::class, 'index'])->name('rag.index');
+Route::post('/rag/ask', [\App\Http\Controllers\RagController::class, 'ask'])->name('rag.ask');

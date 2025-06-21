@@ -13,6 +13,7 @@ use App\Actions\Product\EditProductAction;
 use App\Actions\Product\UpdateProductAction;
 use App\Actions\Product\DestroyProductAction;
 use App\Actions\Product\ToggleOfferPoolAction;
+use App\Actions\Product\ShowProductAction;
 
 class ProductController extends Controller
 {
@@ -86,5 +87,14 @@ class ProductController extends Controller
     {
         $product = $action->handle($id, $request->input('is_offer_pool'));
         return response()->json(['success' => true, 'is_offer_pool' => $product->is_offer_pool]);
+    }
+
+    public function show($id, ShowProductAction $action)
+    {
+        $product = $action->handle($this->service, $id);
+        if ($product) {
+            return view('admin.products.show', compact('product'));
+        }
+        return back()->with('error', 'Product not found');
     }
 }

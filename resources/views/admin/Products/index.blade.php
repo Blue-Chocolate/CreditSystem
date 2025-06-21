@@ -1,53 +1,40 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="p-6">
-    <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">Products</h1>
-        <a href="{{ route('admin.products.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded">Add Product</a>
+<div>
+    <div>
+        <h1>Products</h1>
+        <a href="{{ route('admin.products.create') }}">Add Product</a>
     </div>
 
-    @if(session('success')) <p class="text-green-600">{{ session('success') }}</p> @endif
+    @if(session('success')) <p>{{ session('success') }}</p> @endif
 
-    <table class="w-full bg-white shadow rounded-xl">
-        <thead>
-            <tr>
-                <th class="p-3 border-b">Image</th>
-                <th class="p-3 border-b">Name</th>
-                <th class="p-3 border-b">Category</th>
-                <th class="p-3 border-b">Points</th>
-                <th class="p-3 border-b">Offer Pool</th>
-                <th class="p-3 border-b">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($products as $product)
-            <tr>
-                <td class="p-3 border-b flex items-center gap-2">
-                    <label class="cursor-pointer flex items-center gap-2">
-                        <input type="checkbox" class="offer-pool-checkbox" data-id="{{ $product->id }}" {{ $product->is_offer_pool ? 'checked' : '' }} />
-                        <img src="{{ asset('storage/' . $product->image) }}" class="w-12 h-12 rounded" onerror="this.onerror=null;this.src='https://via.placeholder.com/48';" />
-                    </label>
-                </td>
-                <td class="p-3 border-b">{{ $product->name }}</td>
-                <td class="p-3 border-b">{{ $product->category->name ?? 'N/A' }}</td>
-                <td class="p-3 border-b">{{ $product->points_required }}</td>
-                <td class="p-3 border-b">
-                    <input type="checkbox" class="offer-pool-checkbox" data-id="{{ $product->id }}" {{ $product->is_offer_pool ? 'checked' : '' }} />
-                </td>
-                <td class="p-3 border-b">
-                    <a href="{{ route('admin.products.edit', $product->id) }}" class="text-yellow-600">Edit</a> |
+    <div>
+        @foreach($products as $product)
+        <div onclick="window.location='{{ route('admin.products.show', $product->id) }}'">
+            <div>
+                <img src="{{ asset('storage/' . $product->image) }}" onerror="this.onerror=null;this.src='https://via.placeholder.com/96';" />
+                <h2>{{ $product->name }}</h2>
+                <p>{{ $product->category->name ?? 'N/A' }}</p>
+                <p>Points: {{ $product->points_required }}</p>
+                <p>Offer Pool: {{ $product->is_offer_pool ? 'Yes' : 'No' }}</p>
+                <div>
+                    <input type="checkbox" class="offer-pool-checkbox" data-id="{{ $product->id }}" {{ $product->is_offer_pool ? 'checked' : '' }} onclick="event.stopPropagation();" />
+                    <span>Toggle Offer</span>
+                </div>
+                <div>
+                    <a href="{{ route('admin.products.edit', $product->id) }}">Edit</a>
                     <form method="POST" action="{{ route('admin.products.destroy', $product->id) }}" class="inline">
                         @csrf @method('DELETE')
-                        <button onclick="return confirm('Delete this product?')" class="text-red-600">Delete</button>
+                        <button onclick="return confirm('Delete this product?');event.stopPropagation();">Delete</button>
                     </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
 
-    <div class="mt-4">
+    <div>
         {{ $products->links() }}
     </div>
 </div>
