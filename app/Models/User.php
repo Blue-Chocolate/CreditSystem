@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Purchase;
 
 class User extends Authenticatable
 {
@@ -27,5 +28,10 @@ class User extends Authenticatable
     public function creditPackages()
     {
         return $this->hasMany(\App\Models\CreditPackage::class);
+    }
+
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
     }
 }

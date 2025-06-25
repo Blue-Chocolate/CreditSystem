@@ -55,7 +55,7 @@ class ProductRepository
                           ->when(!is_null($isOfferPool), fn($q) => $q->where('is_offer_pool', $isOfferPool))
                           ->when($category, fn($q) => $q->where('category', $category))
                           ->latest()
-                          ->get();
+                          ->paginate(10);
         } catch (Exception $e) {
             Log::error('Product search failed: ' . $e->getMessage());
             return collect();

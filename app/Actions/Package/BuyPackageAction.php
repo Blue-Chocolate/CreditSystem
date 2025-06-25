@@ -5,6 +5,7 @@ namespace App\Actions\Package;
 use App\Repositories\Packages\PackageRepository;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use App\Models\Purchase;
 
 class BuyPackageAction
 {
@@ -33,7 +34,15 @@ class BuyPackageAction
             if (!$user->save()) {
                 throw new Exception('Failed to update user balance.');
             }
-            // Optionally: log the purchase in a dedicated table here
+            // Log the purchase
+            Purchase::create([
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'price' => $package->price,
+                'credits' => $package->credits,
+                'reward_points' => $package->reward_points,
+                'purchased_at' => now(),
+            ]);
             return $package;
         });
     }

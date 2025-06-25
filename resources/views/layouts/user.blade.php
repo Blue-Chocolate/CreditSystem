@@ -133,6 +133,69 @@
             margin-top: 4px;
             z-index: 2000;
         }
+        .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-img-top {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    height: 200px;
+    object-fit: cover;
+}
+
+.card-body {
+    background: white;
+    padding: 16px;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.badge.bg-info {
+    background: var(--primary-color);
+    color: white;
+}
+
+.badge.bg-success {
+    background: #55efc4;
+}
+
+.badge.bg-secondary {
+    background: #b2bec3;
+}
+
+.card-footer {
+    background: white;
+    border-top: none;
+    padding: 12px 16px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    border: none;
+    transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
     </style>
 </head>
 <body>
@@ -180,13 +243,40 @@
         @foreach($cartSidebarItems as $item)
             @if($item->product)
             <div class="cart-item" title="{{ $item->product->name }} x{{ $item->quantity }}">
-                <span>{{ $item->product->name }} x{{ $item->quantity }}</span>
+                <span>{{ $item->product->name }}</span>
+                <div class="d-flex align-items-center gap-2">
+                    <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'decrement']) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('PATCH')
+                        <button class="btn btn-sm btn-outline-secondary" @if($item->quantity <= 1) disabled @endif>-</button>
+                    </form>
+                    <span>x{{ $item->quantity }}</span>
+                    <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'increment']) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('PATCH')
+                        <button class="btn btn-sm btn-outline-secondary">+</button>
+                    </form>
+                    <form action="{{ route('user.cart.remove', $item->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
+                    </form>
+                </div>
                 <span>${{ number_format($item->product->price * $item->quantity, 2) }}</span>
+                @if($item->product->is_offer_pool)
+                    <form action="{{ route('user.cart.redeem', $item->id) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button class="btn btn-sm btn-danger mt-2">Redeem</button>
+                    </form>
+                @endif
             </div>
             @endif
         @endforeach
         <div class="cart-footer" title="Total Price">
             Total: ${{ number_format($cartSidebarTotal, 2) }}
+        </div>
+        <div class="d-grid mt-2">
+            <a href="{{ route('user.cart.show') }}" class="btn btn-primary">Checkout</a>
         </div>
     @else
         <div class="cart-footer">Cart is empty</div>

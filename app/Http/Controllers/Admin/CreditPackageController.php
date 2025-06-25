@@ -11,7 +11,7 @@ class CreditPackageController
 {
     public function index()
     {
-        $packages = CreditPackage::all();
+        $packages = CreditPackage::paginate(10);
         return view('admin.packages.index', compact('packages'));
     }
 

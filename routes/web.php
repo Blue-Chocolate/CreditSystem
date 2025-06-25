@@ -24,7 +24,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
     Route::resource(('packages'), App\Http\Controllers\Admin\CreditPackageController::class);
     Route::resource('orders', App\Http\Controllers\Admin\OrderController::class);
-    Route::get('search', [\App\Http\Controllers\Admin\AdminSearchController::class, '__invoke'])->name('admin.search');
+    Route::get('search', [\App\Http\Controllers\Admin\AdminSearchController::class, '__invoke'])->name('search');
 });
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {
@@ -34,6 +34,8 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
     Route::post('cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::post('cart/update/{id}/{action}', [CartController::class, 'updateQuantity'])->name('cart.update');
     Route::get('cart/get', [CartController::class, 'getCart'])->name('cart.get');
+    Route::delete('cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('cart/redeem/{id}', [CartController::class, 'redeem'])->name('cart.redeem');
     Route::resource('orders', OrderController::class);
     Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
     Route::post('packages/buy/{id}', [PackageController::class, 'buy'])->name('packages.buy');
@@ -43,5 +45,15 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
 });
 Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search.index');
 Route::get('/search/autocomplete', [\App\Http\Controllers\SearchController::class, 'autocomplete'])->name('search.autocomplete');
+
+// Fallback route for 404 Not Found
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
+});
+
+// Optional: Custom unauthorized route
+Route::get('/unauthorized', function () {
+    return response()->view('errors.unauthorized', [], 403);
+})->name('unauthorized');
 
 require __DIR__.'/auth.php';

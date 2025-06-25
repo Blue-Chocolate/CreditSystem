@@ -88,4 +88,36 @@ class CartController extends Controller
         $item->save();
         return back();
     }
+
+    public function redeem($id)
+    {
+        $user = Auth::user();
+        $item = CartItem::with('product')->findOrFail($id);
+        $product = $item->product;
+        if (!$product || !$product->is_offer_pool) {
+            return back()->with('error', 'This product is not eligible for reward redemption.');
+        }
+        // Only allow redeeming one of each offer pool item per user
+        if ($item->quantity > 1) {
+            return back()->with('error', 'You can only redeem one of this offer pool item.');
+        }
+        // Check if user has enough reward points
+        if ($user->reward_points < $product->price) {
+            return back()->with('error', 'Not enough reward points to redeem this item.');
+        }
+        // Optionally: check if user already redeemed this product (if you have a log table)
+        // Deduct reward points
+        $user->reward_points -= $product->price;
+        $user->save();
+        // Remove item from cart after redeem
+        $item->delete();
+        return back()->with('success', 'Product redeemed successfully using reward points!');
+    }
+
+    public function remove($id)
+    {
+        $item = CartItem::findOrFail($id);
+        $item->delete();
+        return back()->with('success', 'Item removed from cart.');
+    }
 }

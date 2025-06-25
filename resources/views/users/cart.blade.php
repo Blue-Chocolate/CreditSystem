@@ -4,6 +4,9 @@
 @if(session('success'))
     <div class="alert alert-success">{{ session('success') }}</div>
 @endif
+@if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+@endif
 <form method="POST" action="{{ route('user.orders.store') }}">
     @csrf
     <table class="table">
@@ -13,6 +16,7 @@
                 <th>Price</th>
                 <th>Quantity</th>
                 <th>Subtotal</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -32,6 +36,19 @@
                         <button type="submit" formaction="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'increment']) }}" class="btn btn-sm btn-secondary">+</button>
                     </td>
                     <td>${{ $subtotal }}</td>
+                    <td>
+                        <form action="{{ route('user.cart.remove', $item->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
+                        </form>
+                        @if($item->product->is_offer_pool)
+                            <form action="{{ route('user.cart.redeem', $item->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                <button class="btn btn-sm btn-danger mt-1">Redeem</button>
+                            </form>
+                        @endif
+                    </td>
                 </tr>
             @endforeach
         </tbody>

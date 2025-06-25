@@ -39,7 +39,7 @@ class PackageController extends Controller
     public function history()
     {
         $user = Auth::user();
-        $packages = $user->creditPackages()->orderBy('created_at', 'desc')->get();
-        return view('users.packages.history', compact('packages'));
+        $purchases = $user->purchases()->with('package')->orderBy('purchased_at', 'desc')->get();
+        return view('users.packages.history', compact('purchases'));
     }
 }
