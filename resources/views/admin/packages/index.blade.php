@@ -95,16 +95,20 @@
                     <td>{{ $package->credits }}</td>
                     <td>{{ $package->reward_points }}</td>
                     <td>
-                        <a href="{{ route('packages.edit', $package->id) }}" class="btn">Edit</a>
-                        <form action="{{ route('packages.destroy', $package->id) }}" method="POST" class="inline">
+                        <a href="{{ route('admin.packages.edit', $package->id) }}" class="btn">Edit</a>
+                        <form action="{{ route('admin.packages.destroy', $package->id) }}" method="POST" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn" style="background-color: red;">Delete</button>
                         </form>
-                        <a href="{{ route('packages.show', $package->id) }}" class="btn" style="background-color: gray;">View</a>
+                        <a href="{{ route('admin.packages.show', $package->id) }}" class="btn" style="background-color: gray;">View</a>
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+
+    <div class="d-flex justify-content-center mt-3">
+        {{ $packages->links() }}
+    </div>
 @endsection

@@ -8,7 +8,9 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
+        "laravel/scout": "^10.15",
         "laravel/tinker": "^2.10.1",
+        "meilisearch/meilisearch-php": "^1.15",
         "spatie/laravel-permission": "^6.20"
     },
     "require-dev": {
@@ -72,6 +74,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }

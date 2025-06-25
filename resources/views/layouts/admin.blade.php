@@ -49,12 +49,24 @@
     <aside class="sidebar w-64">
         <div class="p-6 text-xl font-bold border-b border-gray-700">ElSalam Admin</div>
         <nav class="mt-6">
-            
+            <a href="{{ route('admin.products.index') }}">Products</a>
+            <a href="{{ route('admin.packages.index') }}">Packages</a>
+            <a href="{{ route('admin.orders.index') }}">Orders</a>
+            <a href="{{ url('admin/users') }}">Users</a>
+            <a href="{{ url('admin/settings') }}">Settings</a>
+
         </nav>
     </aside>
 
     {{-- Main Content --}}
     <div class="flex-1 flex flex-col min-h-screen">
+        <header class="p-4 bg-white border-b flex align-items-center justify-content-between">
+            <form method="GET" action="{{ route('admin.search') }}" class="d-flex" style="max-width:400px;">
+                <input type="text" name="q" class="form-control me-2" placeholder="Search users, products, packages by name or ID..." value="{{ request('q') }}" autocomplete="off" aria-label="Admin search">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+        </header>
+
         <main class="flex-1 p-6">
             @yield('content')
         </main>

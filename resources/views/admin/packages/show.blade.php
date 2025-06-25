@@ -10,6 +10,6 @@
         <p><strong>Credit Points:</strong> {{ $package->credits }}</p>
         <p><strong>Reward Points:</strong> {{ $package->reward_points }}</p>
 
-        <a href="{{ route('packages.index') }}" class="btn">Back</a>
+        <a href="{{ route('admin.packages.index') }}" class="btn">Back</a>
     </div>
 @endsection

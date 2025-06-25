@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\OrderController;
+use App\Http\Controllers\User\PackageController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,13 +23,25 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
     Route::resource(('packages'), App\Http\Controllers\Admin\CreditPackageController::class);
+    Route::resource('orders', App\Http\Controllers\Admin\OrderController::class);
+    Route::get('search', [\App\Http\Controllers\Admin\AdminSearchController::class, '__invoke'])->name('admin.search');
 });
 
 Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(function () {
     Route::get('/home', [App\Http\Controllers\User\HomeController::class, 'index'])->name('dashboard');
     Route::get('/products/{product}', [App\Http\Controllers\User\HomeController::class, 'show'])->name('products.show');
+    Route::get('cart', [CartController::class, 'showCart'])->name('cart.show');
+    Route::post('cart/add', [CartController::class, 'add'])->name('cart.add');
+    Route::post('cart/update/{id}/{action}', [CartController::class, 'updateQuantity'])->name('cart.update');
+    Route::get('cart/get', [CartController::class, 'getCart'])->name('cart.get');
+    Route::resource('orders', OrderController::class);
+    Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
+    Route::post('packages/buy/{id}', [PackageController::class, 'buy'])->name('packages.buy');
+    Route::post('orders/store', [App\Http\Controllers\User\OrderController::class, 'store'])->name('orders.store');
+    Route::get('orders/history', [OrderController::class, 'history'])->name('orders.history');
+    Route::get('packages/history', [PackageController::class, 'history'])->name('packages.history');
 });
-
-
+Route::get('/search', [\App\Http\Controllers\SearchController::class, 'index'])->name('search.index');
+Route::get('/search/autocomplete', [\App\Http\Controllers\SearchController::class, 'autocomplete'])->name('search.autocomplete');
 
 require __DIR__.'/auth.php';

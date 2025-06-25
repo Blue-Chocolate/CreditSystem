@@ -31,6 +31,10 @@ class CreditPackageController
 
         $action->handle($validated);
 
-        return redirect()->route('packages.index')->with('success', 'Package created');
+        return redirect()->route('admin.packages.index')->with('success', 'Package created');
+    }
+    public function show (CreditPackage $package)
+    {
+        return view('admin.packages.show', compact('package'));
     }
 }

@@ -33,8 +33,7 @@ class StoreProductAction
             return $this->repo->create($data);
 
         } catch (Exception $e) {
-            Log::error('Product creation failed: ' . $e->getMessage());
-            return null;
+            throw $e; // This will show the real error
         }
     }
 }

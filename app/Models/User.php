@@ -23,4 +23,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function creditPackages()
+    {
+        return $this->hasMany(\App\Models\CreditPackage::class);
+    }
 }
