@@ -34,7 +34,9 @@
     </tbody>
 </table>
 <div class="d-flex justify-content-center mt-3">
+    @if(method_exists($orders, 'links'))
         {{ $orders->links() }}
-    </div>
+    @endif
+</div>
 <a href="{{ route('admin.orders.create') }}" class="btn btn-primary mt-3">Create Order</a>
 @endsection

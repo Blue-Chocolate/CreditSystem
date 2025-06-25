@@ -4,6 +4,10 @@
 @if(session('success'))
     <div class="alert alert-success">{{ session('success') }}</div>
 @endif
+@if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+@endif
+
 <table class="table">
     <thead><tr><th>ID</th><th>Name</th><th>Credits</th><th>Price</th><th>Reward Points</th><th>Action</th></tr></thead>
     <tbody>
@@ -27,6 +31,8 @@
     </tbody>
 </table>
 <div class="d-flex justify-content-center mt-3">
+    @if(method_exists($packages, 'links'))
         {{ $packages->links() }}
-    </div>
+    @endif
+</div>
 @endsection

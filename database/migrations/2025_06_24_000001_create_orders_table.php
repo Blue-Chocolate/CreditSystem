@@ -10,11 +10,14 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-                        $table->dropColumn('name');
+            $table->string('name')->nullable();
 
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('status')->default('pending');
-            $table->decimal('total', 10, 2)->default(0);
+            $table->decimal('total', 10, 2)->default(0); 
+            $table->string('payment_method')->nullable()->after('total');
+
+
             $table->timestamps();
         });
     }

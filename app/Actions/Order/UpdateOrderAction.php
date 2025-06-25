@@ -2,17 +2,13 @@
 
 namespace App\Actions\Order;
 
-use App\Repositories\Orders\OrderRepository;
+use App\Models\Order;
 
 class UpdateOrderAction
 {
-    protected $repo;
-    public function __construct(OrderRepository $repo)
+    public function execute($id, $data)
     {
-        $this->repo = $repo;
-    }
-    public function execute($id, array $data)
-    {
-        return $this->repo->update($id, $data);
+        $order = Order::findOrFail($id);
+        $order->update($data);
     }
 }

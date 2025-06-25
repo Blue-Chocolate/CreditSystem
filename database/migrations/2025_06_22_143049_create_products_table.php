@@ -19,6 +19,7 @@ return new class extends Migration
         $table->integer('reward_points')->nullable(); // Only if offer pool
         $table->string('image')->nullable();
         $table->string('category')->default('Electronic Devices');
+        $table->string('image_url')->nullable(); // For external image URLs
 
         $table->timestamps();
     });

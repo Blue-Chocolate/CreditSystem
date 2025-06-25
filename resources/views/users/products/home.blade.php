@@ -46,15 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
             axios.post("{{ route('user.cart.add') }}", { id })
                 .then(response => {
                     if (response.data.success) {
-                        alert('Product added to cart!');
+                        showToast('Product added to cart!');
                         loadCart(); 
                     } else {
-                        alert('Failed to add to cart.');
+                        showToast('Failed to add to cart.', true);
                     }
                 })
                 .catch(error => {
                     console.error(error);
-                    alert('Failed to add to cart.');
+                    showToast('Failed to add to cart.', true);
                 });
         });
     });
@@ -84,6 +84,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(error);
             });
     }
+
+    // Modern toast notification
+    function showToast(message, isError = false) {
+        let toast = document.createElement('div');
+        toast.className = 'custom-toast' + (isError ? ' error' : '');
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.classList.add('show'); }, 10);
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 2000);
+    }
 });
 </script>
+<style>
+.custom-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: #2ecc71;
+    color: #fff;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(30px);
+}
+.custom-toast.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.custom-toast.error {
+    background: #e74c3c;
+}
+</style>
 @endsection

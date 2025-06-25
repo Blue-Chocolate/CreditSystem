@@ -30,7 +30,12 @@ class PackageController extends Controller
         $user = Auth::user();
         try {
             $package = $this->buyAction->execute($user, $id);
-            return redirect()->route('user.packages.index')->with('success', 'Package bought successfully!');
+            // Reload user from DB to get updated balance and relationships
+            $user = \App\Models\User::find($user->id);
+            return redirect()->route('user.packages.index')->with([
+                'success' => 'Package bought successfully! Your new balance is $' . number_format($user->credit_balance, 2),
+                'balance' => $user->credit_balance
+            ]);
         } catch (\Exception $e) {
             return redirect()->route('user.packages.index')->with('error', $e->getMessage());
         }
@@ -38,7 +43,7 @@ class PackageController extends Controller
 
     public function history()
     {
-        $user = Auth::user();
+        $user = \App\Models\User::find(Auth::id());
         $purchases = $user->purchases()->with('package')->orderBy('purchased_at', 'desc')->get();
         return view('users.packages.history', compact('purchases'));
     }

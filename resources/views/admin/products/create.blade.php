@@ -44,10 +44,14 @@
         <label>Stock</label>
         <input type="number" name="stock" value="{{ old('stock', $product->stock ?? 0) }}" required>
 
-        <label>Image</label>
+        <label>Image (Upload a file or provide a URL)</label>
         <input type="file" name="image">
+        <div style="text-align:center; margin: 10px 0;">OR</div>
+        <input type="url" name="image_url" placeholder="https://example.com/image.jpg" value="{{ old('image_url', $product->image_url ?? '') }}">
         @if (isset($product) && $product->image)
             <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image">
+        @elseif (isset($product) && $product->image_url)
+            <img src="{{ $product->image_url }}" alt="Current Image">
         @endif
 
         <label>

@@ -1,12 +1,15 @@
 @extends('layouts.user')
+
 @section('content')
 <h2>Your Cart</h2>
+
 @if(session('success'))
     <div class="alert alert-success">{{ session('success') }}</div>
 @endif
 @if(session('error'))
     <div class="alert alert-danger">{{ session('error') }}</div>
 @endif
+
 <form method="POST" action="{{ route('user.orders.store') }}">
     @csrf
     <table class="table">
@@ -39,9 +42,9 @@
                     <td>
                         <form action="{{ route('user.cart.remove', $item->id) }}" method="POST" style="display:inline;">
                             @csrf
-                            @method('DELETE')
                             <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
                         </form>
+
                         @if($item->product->is_offer_pool)
                             <form action="{{ route('user.cart.redeem', $item->id) }}" method="POST" style="display:inline;">
                                 @csrf
@@ -53,10 +56,12 @@
             @endforeach
         </tbody>
     </table>
+
     <div class="mb-3">
         <strong>Total: ${{ $total }}</strong>
         <input type="hidden" name="total" value="{{ $total }}">
     </div>
+
     <div class="mb-3">
         <label>Payment Method</label>
         <select name="payment_method" class="form-control">
@@ -68,6 +73,7 @@
             @endif
         </select>
     </div>
+
     <button class="btn btn-success">Checkout</button>
 </form>
 @endsection

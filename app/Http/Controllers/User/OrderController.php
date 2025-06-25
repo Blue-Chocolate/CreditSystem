@@ -7,8 +7,14 @@ use App\Repositories\Orders\OrderRepository;
 use App\Actions\Order\CreateOrderAction;
 use App\Actions\Order\UpdateOrderAction;
 use App\Actions\Order\DeleteOrderAction;
+use App\Actions\Order\StoreOrderAction;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Models\Cart;
+use App\Models\OrderItem;
+use App\Models\Order;
 
 class OrderController extends Controller
 {
@@ -27,7 +33,7 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = $this->orders->allForUser(Auth::id());
+        $orders = $this->orders->paginateForUser(Auth::id(), 10);
         return view('users.orders.index', compact('orders'));
     }
 
@@ -42,74 +48,66 @@ class OrderController extends Controller
         return view('users.orders.create');
     }
 
+     // ⬇️ Insert the store method here ⬇️
     public function store(Request $request)
     {
-        $data = $request->validate([
+        $request->validate([
             'total' => 'required|numeric',
-            'payment_method' => 'required|string',
+            'payment_method' => 'required|in:cash,visa,credit_points,reward_points',
         ]);
+
         $user = Auth::user();
-        $cart = \App\Models\Cart::with('items.product')->where('user_id', $user->id)->first();
-        $total = $data['total'];
-        $paymentMethod = $data['payment_method'];
-        $allInOfferPool = true;
-        $creditPointsEarned = 0;
-        $rewardPointsEarned = 0;
+        $cart = Cart::with('items.product')->where('user_id', $user->id)->first();
+
         if (!$cart || $cart->items->isEmpty()) {
-            return back()->with('error', 'Cart is empty.');
+            return back()->with('error', 'Your cart is empty.');
         }
-        // Check payment method and user balance/points
-        if ($paymentMethod === 'cash') {
-            if ($user->credit_balance < $total) {
-                return back()->with('error', 'Insufficient balance.');
-            }
-            $user->credit_balance -= $total;
-        } elseif ($paymentMethod === 'credit_points') {
-            if ($user->credit_points < $total) {
-                return back()->with('error', 'Insufficient credit points.');
-            }
-            $user->credit_points -= $total;
-        } elseif ($paymentMethod === 'reward_points') {
-            foreach ($cart->items as $item) {
-                if (!$item->product->is_offer_pool) {
-                    $allInOfferPool = false;
-                    break;
-                }
-            }
-            if (!$allInOfferPool) {
-                return back()->with('error', 'All items must be in offer pool to use reward points.');
-            }
-            if ($user->reward_points < $total) {
-                return back()->with('error', 'Insufficient reward points.');
-            }
-            $user->reward_points -= $total;
-        }
-        // Calculate credit points and reward points
-        $creditPointsEarned = (int) $total; // 1 EGP = 1 credit point
-        $rewardPointsEarned = intdiv($creditPointsEarned, 10); // 10 credit points = 1 reward point
-        // Add reward points if any product is in offer pool
-        foreach ($cart->items as $item) {
-            if ($item->product->is_offer_pool) {
-                $user->reward_points += $rewardPointsEarned;
-                break;
+
+        $total = $request->total;
+
+        // Always check for enough credit points if payment method is credit_points
+        if ($request->payment_method === 'credit_points') {
+            $requiredPoints = (int) ceil($total); // 1 EGP = 1 credit point
+            if ($user->credit_points < $requiredPoints) {
+                return back()->with('error', 'Insufficient credit points. You need ' . $requiredPoints . ' credit points.');
             }
         }
-        $user->credit_points += $creditPointsEarned;
-        $user->save();
-        $data['user_id'] = $user->id;
-        $order = $this->createAction->execute($data);
-        // Move cart items to order_items
-        foreach ($cart->items as $cartItem) {
-            $order->items()->create([
-                'product_id' => $cartItem->product_id,
-                'quantity' => $cartItem->quantity,
-                'price' => $cartItem->product->price,
+        if ($request->payment_method === 'reward_points' && $user->reward_points < $total) {
+            return back()->with('error', 'Insufficient reward points.');
+        }
+
+        DB::transaction(function () use ($user, $cart, $total, $request) {
+            if ($request->payment_method === 'credit_points') {
+                $requiredPoints = (int) ceil($total);
+                $user->credit_points -= $requiredPoints;
+            } elseif ($request->payment_method === 'reward_points') {
+                $user->reward_points -= $total;
+            } elseif ($request->payment_method === 'cash' || $request->payment_method === 'visa') {
+                $user->credit_balance -= $total;
+            }
+            $user->save();
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'total' => $total,
+                'status' => 'Pending',
+                'payment_method' => $request->payment_method,
             ]);
-        }
-        $cart->items()->delete();
+
+            foreach ($cart->items as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->product->price,
+                ]);
+            }
+
+            $cart->items()->delete();
+        });
+
         return redirect()->route('user.orders.index')->with('success', 'Order placed successfully!');
     }
-
     public function edit($id)
     {
         $order = $this->orders->find($id);
@@ -122,19 +120,21 @@ class OrderController extends Controller
             'total' => 'required|numeric',
             'status' => 'required|string',
         ]);
+
         $this->updateAction->execute($id, $data);
-        return redirect()->route('user.orders.index');
+
+        return redirect()->route('user.orders.index')->with('success', 'Order updated.');
     }
 
-    public function destroy($id)
-    {
-        $this->deleteAction->execute($id);
-        return redirect()->route('user.orders.index');
-    }
+public function destroy($id)
+{
+    $this->deleteAction->execute($id);
 
+    return redirect()->route('user.orders.index')->with('success', 'Order deleted.');
+}
     public function history()
     {
-        $orders = $this->orders->allForUser(Auth::id());
+        $orders = $this->orders->paginateForUser(Auth::id(), 10);
         return view('users.orders.history', compact('orders'));
     }
 }

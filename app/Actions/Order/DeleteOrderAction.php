@@ -2,17 +2,17 @@
 
 namespace App\Actions\Order;
 
-use App\Repositories\Orders\OrderRepository;
+use App\Models\Order;
+use Illuminate\Support\Facades\Auth;
 
 class DeleteOrderAction
 {
-    protected $repo;
-    public function __construct(OrderRepository $repo)
-    {
-        $this->repo = $repo;
-    }
     public function execute($id)
     {
-        return $this->repo->delete($id);
+        $order = Order::where('id', $id)
+                      ->where('user_id', Auth::id()) // Secure: Only delete user's own order
+                      ->firstOrFail();
+
+        $order->delete();
     }
 }

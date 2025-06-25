@@ -197,6 +197,7 @@
     background: var(--primary-hover);
 }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
 
@@ -217,6 +218,7 @@
             <a href="{{ route('user.packages.history') }}" title="Your Package History">Pkg History</a>
             <a href="{{ route('user.cart.show') }}" title="View Cart">Cart</a>
             <a href="{{ route('search.index') }}" title="Search Again">Search</a>
+            <a href="{{ route('user.dashboard') }}" class="btn btn-link">Home</a>
 
             <div class="user-info" title="Your account details">
                 <strong>{{ auth()->user()->name }}</strong> |
@@ -283,6 +285,22 @@
     @endif
 </div>
 
+<!-- Floating Chatbot Icon -->
+<div id="user-chatbot-icon" style="position:fixed;bottom:30px;right:30px;z-index:9999;cursor:pointer;">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Chatbot" width="60" height="60">
+</div>
+<!-- Chatbot Modal -->
+<div id="user-chatbot-modal" style="display:none;position:fixed;bottom:100px;right:30px;width:350px;max-width:90vw;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.2);z-index:10000;overflow:hidden;">
+    <div style="background:#007bff;color:#fff;padding:12px 16px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;">
+        User Assistant
+        <span id="user-chatbot-close" style="cursor:pointer;font-size:20px;">&times;</span>
+    </div>
+    <div id="user-chatbot-body" style="padding:16px;max-height:350px;overflow-y:auto;font-size:15px;"></div>
+    <form id="user-chatbot-form" style="display:flex;border-top:1px solid #eee;">
+        <input type="text" id="user-chatbot-input" class="form-control" placeholder="Ask about your balance, points, or what you can buy..." style="flex:1;border:none;">
+        <button class="btn btn-primary" type="submit">Send</button>
+    </form>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('search-input');
@@ -337,6 +355,34 @@ document.addEventListener('DOMContentLoaded', function() {
         isDragging = false;
     });
 })();
+</script>
+
+<script>
+document.getElementById('user-chatbot-icon').onclick = function() {
+    document.getElementById('user-chatbot-modal').style.display = 'block';
+};
+document.getElementById('user-chatbot-close').onclick = function() {
+    document.getElementById('user-chatbot-modal').style.display = 'none';
+};
+document.getElementById('user-chatbot-form').onsubmit = function(e) {
+    e.preventDefault();
+    var input = document.getElementById('user-chatbot-input');
+    var body = document.getElementById('user-chatbot-body');
+    var msg = input.value.trim();
+    if (!msg) return;
+    body.innerHTML += '<div style="margin-bottom:8px;"><b>You:</b> '+msg+'</div>';
+    input.value = '';
+    fetch('/user/rag/chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json','X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content},
+        body: JSON.stringify({message: msg})
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        body.innerHTML += '<div style="margin-bottom:8px;"><b>Bot:</b> '+d.reply+'</div>';
+        body.scrollTop = body.scrollHeight;
+    });
+};
 </script>
 
 </body>

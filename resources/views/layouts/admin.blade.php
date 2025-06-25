@@ -120,7 +120,58 @@
             font-size: 0.875rem;
             color: #6b7280;
         }
+
+        /* Chatbot styles */
+        #admin-chatbot-icon {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            cursor: pointer;
+        }
+
+        #admin-chatbot-modal {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 350px;
+            max-width: 90vw;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            overflow: hidden;
+        }
+
+        #admin-chatbot-modal .modal-header {
+            background: #007bff;
+            color: #fff;
+            padding: 12px 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #admin-chatbot-modal .modal-body {
+            padding: 16px;
+            max-height: 350px;
+            overflow-y: auto;
+            font-size: 15px;
+        }
+
+        #admin-chatbot-modal .modal-footer {
+            display: flex;
+            border-top: 1px solid #eee;
+        }
+
+        #admin-chatbot-modal .modal-footer input {
+            flex: 1;
+            border: none;
+        }
     </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
 
@@ -133,6 +184,10 @@
             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active-link' : '' }}">Orders</a>
             <a href="{{ url('admin/users') }}" class="{{ request()->is('admin/users*') ? 'active-link' : '' }}">Users</a>
             <a href="{{ url('admin/settings') }}" class="{{ request()->is('admin/settings*') ? 'active-link' : '' }}">Settings</a>
+            <form action="{{ route('logout') }}" method="POST" class="mt-3">
+                @csrf
+                <button class="btn btn-danger w-100">Logout</button>
+            </form>
         </nav>
     </aside>
 
@@ -154,5 +209,48 @@
         </footer>
     </div>
 
+    <!-- Floating Chatbot Icon -->
+    <div id="admin-chatbot-icon">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Chatbot" width="60" height="60">
+    </div>
+    <!-- Chatbot Modal -->
+    <div id="admin-chatbot-modal">
+        <div class="modal-header">
+            Admin Assistant
+            <span id="admin-chatbot-close" style="cursor:pointer;font-size:20px;">&times;</span>
+        </div>
+        <div id="admin-chatbot-body" class="modal-body"></div>
+        <form id="admin-chatbot-form" class="modal-footer">
+            <input type="text" id="admin-chatbot-input" class="form-control" placeholder="Search users or products..." style="flex:1;border:none;">
+            <button class="btn btn-primary" type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+    document.getElementById('admin-chatbot-icon').onclick = function() {
+        document.getElementById('admin-chatbot-modal').style.display = 'block';
+    };
+    document.getElementById('admin-chatbot-close').onclick = function() {
+        document.getElementById('admin-chatbot-modal').style.display = 'none';
+    };
+    document.getElementById('admin-chatbot-form').onsubmit = function(e) {
+        e.preventDefault();
+        var input = document.getElementById('admin-chatbot-input');
+        var body = document.getElementById('admin-chatbot-body');
+        var msg = input.value.trim();
+        if (!msg) return;
+        body.innerHTML += '<div style="margin-bottom:8px;"><b>You:</b> '+msg+'</div>';
+        input.value = '';
+        fetch('/admin/rag/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json','X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content},
+            body: JSON.stringify({message: msg})
+        })
+        .then(r=>r.json())
+        .then(d=>{
+            body.innerHTML += '<div style="margin-bottom:8px;"><b>Bot:</b> '+d.reply+'</div>';
+            body.scrollTop = body.scrollHeight;
+        });
+    };
+    </script>
 </body>
 </html>
