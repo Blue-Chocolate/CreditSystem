@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('image')->nullable();
             $table->string('category')->default('Electronic Devices');
             $table->string('description')->nullable();
-            $table->string('stock')->default('In Stock');
+            $table->integer('stock')->default(0);
             $table->string('image_url')->nullable();
             $table->timestamps();
         });

@@ -16,13 +16,13 @@ class StoreProductAction
     {
         try {
            $data = $request->validate([
-    'name' => 'required|string|max:255',
-    'price' => 'required|numeric',
+    'name' => 'required|string|max:255|unique:products,name',
+    'price' => 'required|numeric|min:0.01',
     'stock' => 'required|integer|min:0',
     'category' => 'required|string|in:Electronic Devices,Kitchen Devices,Home Essentials',
     'is_offer_pool' => 'boolean',
-    'reward_points' => 'nullable|integer|required_if:is_offer_pool,1',
-    'image' => 'nullable|image|max:2048',
+    'reward_points' => 'nullable|integer|required_if:is_offer_pool,1|min:1',
+    'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
     'image_url' => 'nullable|url',
     'description' => 'nullable|string|max:1000',
     

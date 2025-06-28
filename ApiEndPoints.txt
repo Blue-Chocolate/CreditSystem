@@ -1,0 +1,58 @@
+Public Web Endpoints (web.php)
+GET /user/home — Public user home/product listing
+GET /user/products/{product} — Public product details
+GET /search — Product search page
+GET /search/autocomplete — Search autocomplete
+Cart (Guest & User)
+GET /user/cart — View cart (sidebar/page)
+POST /user/cart/add — Add to cart
+POST /user/cart/update/{id}/{action} — Update cart item quantity
+GET /user/cart/get — Get cart items (AJAX)
+DELETE /user/cart/remove/{id} — Remove item from cart
+POST /user/cart/redeem/{id} — Redeem product from cart
+Authenticated User Endpoints (/user/*)
+GET /user/orders — List orders
+
+GET /user/orders/create — Create order
+
+POST /user/orders — Store order (checkout)
+
+GET /user/orders/{order} — Show order
+
+GET /user/orders/{order}/edit — Edit order
+
+PUT /user/orders/{order} — Update order
+
+DELETE /user/orders/{order} — Delete order
+
+GET /user/orders/history — Order history
+
+GET /user/packages — List credit packages
+
+POST /user/packages/buy/{id} — Buy credit package
+
+GET /user/packages/history — Package purchase history
+
+GET /user/rag — User RAG (AI assistant) page
+
+POST /user/rag/chat — User RAG chat endpoint
+
+GET /user/balance — Get user balance
+
+GET /user/products/search — Product search (AJAX)
+
+POST /user/ai/recommendation — AI product recommendation
+
+Admin Endpoints (/admin/*)
+GET /admin/dashboard — Admin dashboard
+resource /admin/products — CRUD for products
+resource /admin/packages — CRUD for credit packages
+resource /admin/orders — CRUD for orders
+GET /admin/search — Admin search
+GET /admin/rag — Admin RAG (AI assistant) page
+POST /admin/rag/chat — Admin RAG chat endpoint
+GET /admin/users/history — Unified user order/package history
+Auth/Profile
+GET /profile — Edit profile
+PATCH /profile — Update profile
+DELETE /profile — Delete profile

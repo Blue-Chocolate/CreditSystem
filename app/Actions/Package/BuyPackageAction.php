@@ -22,19 +22,18 @@ class BuyPackageAction
             if (!$package) {
                 throw new Exception('Package not found.');
             }
+            if ($package->currency && $package->currency !== 'USD') {
+                throw new Exception('Currency mismatch. Please contact support.');
+            }
             if ($user->credit_balance < $package->price) {
                 throw new Exception('Insufficient balance.');
             }
-            // Deduct price
-            $user->credit_balance -= $package->price;
-            // Add credit points
-            $user->credit_points += $package->credits;
-            // Add reward points
-            $user->reward_points += $package->reward_points;
+            $user->credit_balance = max(0, round($user->credit_balance - $package->price, 2));
+            $user->credit_points = round($user->credit_points + $package->credits, 2);
+            $user->reward_points = min(2147483647, $user->reward_points + $package->reward_points); // cap to int(11)
             if (!$user->save()) {
                 throw new Exception('Failed to update user balance.');
             }
-            // Log the purchase
             Purchase::create([
                 'user_id' => $user->id,
                 'package_id' => $package->id,

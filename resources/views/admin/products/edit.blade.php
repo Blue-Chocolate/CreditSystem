@@ -37,6 +37,12 @@
             <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image">
         @endif
 
+        <label>Image URL</label>
+        <input type="url" name="image_url" value="{{ old('image_url', $product->image_url) }}" placeholder="https://...">
+        @if ($product->image_url)
+            <img src="{{ $product->image_url }}" alt="Current Image URL">
+        @endif
+
         <label>
             <input type="hidden" name="is_offer_pool" value="0">
             <input type="checkbox" name="is_offer_pool" value="1" {{ old('is_offer_pool', $product->is_offer_pool) ? 'checked' : '' }}>

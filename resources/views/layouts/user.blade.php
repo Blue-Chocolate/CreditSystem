@@ -207,7 +207,7 @@
 
 <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{{ route('user.dashboard') }}" title="Go to Dashboard">Rio</a>
+        <a class="navbar-brand" href="{{ url('/user/home') }}" title="Go to Dashboard">Rio</a>
 
         <form method="GET" action="{{ route('search.index') }}" class="search-bar" id="search-form" title="Search for products">
             <input type="text" name="q" id="search-input" class="form-control" placeholder="Search products..." value="{{ request('q') }}" autocomplete="off">
@@ -217,23 +217,25 @@
 
         <div class="ms-auto d-flex align-items-center flex-wrap">
             <a href="{{ url('/user/home') }}" title="Home">Home</a>
-
-           <a href="{{ route('user.orders.index') }}" title="Order History">History</a>
+            <a href="{{ route('user.orders.history') }}" title="Order History">History</a>
             <a href="{{ route('user.packages.index') }}" title="Buy Credit Packages" id="packages">Packages</a>
             <a href="{{ route('user.cart.show') }}" title="View Cart">Cart</a>
             <a href="{{ route('search.index') }}" title="Search Again">Search</a>
+            
 
+
+            @if(auth()->check())
             <div class="user-info" title="Your account details">
                 <strong>{{ auth()->user()->name }}</strong> |
                 Balance: ${{ auth()->user()->credit_balance }} |
                 Credit: {{ auth()->user()->credit_points }} |
                 Reward: {{ auth()->user()->reward_points }}
             </div>
-
             <form action="{{ route('logout') }}" method="POST" class="d-inline ms-3" title="Logout">
                 @csrf
-                <button class="btn btn-danger btn-sm">Logout</button>
+                <bu class="btn btn-danger btn-sm">Logout</bu    tton>
             </form>
+            @endif
         </div>
     </div>
 </nav>
@@ -244,36 +246,45 @@
 
 <div id="cart-sidebar" title="Your Cart">
     <h5 class="mb-3">Your Cart</h5>
-    @if(isset($cartSidebarItems) && count($cartSidebarItems))
+    @php
+        $isGuest = !auth()->check();
+        $cartSidebarItems = $isGuest ? collect(session('cart', [])) : (isset($cartSidebarItems) ? collect($cartSidebarItems) : collect());
+        $cartSidebarTotal = $cartSidebarItems->sum(function($item) use ($isGuest) {
+            return ($isGuest ? $item['price'] : $item->product->price) * ($isGuest ? $item['quantity'] : $item->quantity);
+        });
+    @endphp
+    @if($cartSidebarItems->count())
         @foreach($cartSidebarItems as $item)
-            @if($item->product)
-            <div class="cart-item" title="{{ $item->product->name }} x{{ $item->quantity }}">
-                <span>{{ $item->product->name }}</span>
+            @if($isGuest || (isset($item->product) && $item->product))
+            <div class="cart-item" title="{{ $isGuest ? $item['name'] : $item->product->name }} x{{ $isGuest ? $item['quantity'] : $item->quantity }}">
+                <span>{{ $isGuest ? $item['name'] : $item->product->name }}</span>
                 <div class="d-flex align-items-center gap-2">
-                    <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'decrement']) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('PATCH')
-                        <button class="btn btn-sm btn-outline-secondary" @if($item->quantity <= 1) disabled @endif>-</button>
-                    </form>
-                    <span>x{{ $item->quantity }}</span>
-                    <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'increment']) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('PATCH')
-                        <button class="btn btn-sm btn-outline-secondary">+</button>
-                    </form>
-                    <form action="{{ route('user.cart.remove', $item->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
-                    </form>
+                    {{-- For guests, use JS for quantity update/remove; for users, keep forms --}}
+                    @if($isGuest)
+                        <button class="btn btn-sm btn-outline-secondary" onclick="updateGuestCart('{{ $item['id'] }}', 'decrement')" @if($item['quantity'] <= 1) disabled @endif>-</button>
+                        <span>x{{ $item['quantity'] }}</span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="updateGuestCart('{{ $item['id'] }}', 'increment')">+</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeGuestCart('{{ $item['id'] }}')" title="Remove item">&times;</button>
+                    @else
+                        <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'decrement']) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('PATCH')
+                            <button class="btn btn-sm btn-outline-secondary" @if($item->quantity <= 1) disabled @endif>-</button>
+                        </form>
+                        <span>x{{ $item->quantity }}</span>
+                        <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'increment']) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('PATCH')
+                            <button class="btn btn-sm btn-outline-secondary">+</button>
+                        </form>
+                        <form action="{{ route('user.cart.remove', $item->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
+                        </form>
+                    @endif
                 </div>
-                <span>${{ number_format($item->product->price * $item->quantity, 2) }}</span>
-                @if($item->product->is_offer_pool)
-                    <form action="{{ route('user.cart.redeem', $item->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        <button class="btn btn-sm btn-danger mt-2">Redeem</button>
-                    </form>
-                @endif
+                <span>${{ number_format($isGuest ? $item['price'] * $item['quantity'] : $item->product->price * $item->quantity, 2) }}</span>
             </div>
             @endif
         @endforeach
@@ -287,6 +298,29 @@
         <div class="cart-footer">Cart is empty</div>
     @endif
 </div>
+<script>
+function updateGuestCart(id, action) {
+    let cart = JSON.parse(localStorage.getItem('cart') || '{}');
+    if (!cart[id]) return;
+    if (action === 'increment') cart[id].quantity++;
+    if (action === 'decrement') cart[id].quantity = Math.max(1, cart[id].quantity - 1);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    location.reload();
+}
+function removeGuestCart(id) {
+    let cart = JSON.parse(localStorage.getItem('cart') || '{}');
+    delete cart[id];
+    localStorage.setItem('cart', JSON.stringify(cart));
+    location.reload();
+}
+// Sync session cart with localStorage for guests
+if (!@json(auth()->check())) {
+    let sessionCart = @json(session('cart', []));
+    let cart = {};
+    sessionCart.forEach(item => { cart[item.id] = item; });
+    localStorage.setItem('cart', JSON.stringify(cart));
+}
+</script>
 
 <!-- Floating Chatbot Icon -->
 <div id="user-chatbot-icon" style="position:fixed;bottom:30px;right:30px;z-index:9999;cursor:pointer;">
@@ -295,7 +329,7 @@
 
 <!-- Floating User Guide Icon -->
 <div id="user-guide-icon" style="position:fixed;bottom:30px;right:100px;z-index:9999;cursor:pointer;">
-    <img src="https://cdn-icons-png.flaticon.com/512/633/633759.png" alt="User Guide" width="60" height="60">
+    <img src="https://cdn-icons-png.flaticon.com/512/1713/1713228.png" alt="User Guide" width="60" height="60">
 </div>
 
 <!-- Chatbot Modal -->
@@ -310,85 +344,145 @@
         <button class="btn btn-primary" type="submit">Send</button>
     </form>
 </div>
+<div id="manual-tour-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:20000;">
+    <div id="manual-tour-tooltip" style="position:absolute;max-width:300px;background:white;color:#333;padding:16px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h6 id="manual-tour-title"></h6>
+        <p id="manual-tour-description" style="font-size:14px;"></p>
+        <div class="d-flex justify-content-between mt-2">
+            <button id="manual-tour-prev" class="btn btn-secondary btn-sm">Prev</button>
+            <button id="manual-tour-next" class="btn btn-primary btn-sm">Next</button>
+        </div>
+    </div>
+</div>
 
 <!-- Guide Tour on First Login -->
-@if(session('show_driver_tour'))
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // First-time login tour
-    const firstLoginTour = new Driver({
-        animate: true,
-        allowClose: false,
-        showProgress: true,
-        steps: [
-            { 
-                element: '.user-info', 
-                popover: { 
-                    title: 'Your Balance', 
-                    description: 'Here you can see your balance, credit points, and reward points.', 
-                    position: 'bottom' 
-                } 
-            },
-            { 
-                element: '#packages', 
-                popover: { 
-                    title: 'Credit Packages', 
-                    description: 'Buy credit packages to purchase products and earn reward points.', 
-                    position: 'bottom' 
-                } 
-            },
-            { 
-                element: '#cart-sidebar', 
-                popover: { 
-                    title: 'Your Cart', 
-                    description: 'Manage your cart items and checkout from here.', 
-                    position: 'left' 
-                } 
-            }
-        ]
+document.addEventListener('DOMContentLoaded', () => {
+    const steps = [
+        {
+            element: document.querySelector('.user-info'),
+            title: 'Your Balance',
+            description: 'Here you can see your balance, credit points, and reward points.',
+            position: 'bottom'
+        },
+        {
+            element: document.querySelector('#packages'),
+            title: 'Credit Packages',
+            description: 'Buy credit packages to purchase products and earn reward points.',
+            position: 'bottom'
+        },
+        {
+            element: document.querySelector('#cart-sidebar'),
+            title: 'Your Cart',
+            description: 'Manage your cart items and checkout from here.',
+            position: 'left'
+        }
+    ];
+
+    let currentStep = 0;
+
+    const overlay = document.getElementById('manual-tour-overlay');
+    const tooltip = document.getElementById('manual-tour-tooltip');
+    const titleEl = document.getElementById('manual-tour-title');
+    const descEl = document.getElementById('manual-tour-description');
+    const prevBtn = document.getElementById('manual-tour-prev');
+    const nextBtn = document.getElementById('manual-tour-next');
+
+    function showStep(index) {
+        const step = steps[index];
+        if (!step || !step.element) return;
+
+        const rect = step.element.getBoundingClientRect();
+        const spacing = 10;
+        let top = rect.top + window.scrollY;
+        let left = rect.left + window.scrollX;
+
+        if (step.position === 'bottom') {
+            top += rect.height + spacing;
+            left += rect.width / 2 - 150;
+        } else if (step.position === 'left') {
+            top += rect.height / 2 - 75;
+            left -= 320;
+        }
+
+        titleEl.textContent = step.title;
+        descEl.textContent = step.description;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        overlay.style.display = 'block';
+    }
+
+    function startTour() {
+        currentStep = 0;
+        showStep(currentStep);
+    }
+
+    prevBtn.addEventListener('click', () => {
+        if (currentStep > 0) {
+            currentStep--;
+            showStep(currentStep);
+        }
     });
-    firstLoginTour.drive();
+
+    nextBtn.addEventListener('click', () => {
+        currentStep++;
+        if (currentStep < steps.length) {
+            showStep(currentStep);
+        } else {
+            overlay.style.display = 'none';
+        }
+    });
+
+    document.getElementById('user-guide-icon')?.addEventListener('click', startTour);
 });
 </script>
-@endif
 
-<!-- User Guide Icon Click Handler (keep this OUTSIDE the @if block) -->
 <script>
-document.getElementById('user-guide-icon').onclick = function() {
-    const tour = new Driver({
-        animate: true,
-        allowClose: true,
-        showProgress: true,
-        steps: [
-            { 
-                element: '.user-info', 
-                popover: { 
-                    title: 'Your Balance', 
-                    description: 'Here you can see your balance, credit points, and reward points.', 
-                    position: 'bottom' 
-                } 
-            },
-            { 
-                element: '#packages', 
-                popover: { 
-                    title: 'Credit Packages', 
-                    description: 'Buy credit packages to purchase products and earn reward points.', 
-                    position: 'bottom' 
-                } 
-            },
-            { 
-                element: '#cart-sidebar', 
-                popover: { 
-                    title: 'Your Cart', 
-                    description: 'Manage your cart items and checkout from here.', 
-                    position: 'left' 
-                } 
-            }
-        ]
-    });
-    tour.drive();
-};
+document.addEventListener('DOMContentLoaded', function() {
+    // User Chatbot Modal Logic
+    const chatbotIcon = document.getElementById('user-chatbot-icon');
+    const chatbotModal = document.getElementById('user-chatbot-modal');
+    const chatbotClose = document.getElementById('user-chatbot-close');
+    const chatbotForm = document.getElementById('user-chatbot-form');
+    const chatbotInput = document.getElementById('user-chatbot-input');
+    const chatbotBody = document.getElementById('user-chatbot-body');
+
+    if (chatbotIcon && chatbotModal && chatbotClose && chatbotForm && chatbotInput && chatbotBody) {
+        chatbotIcon.onclick = function() {
+            chatbotModal.style.display = 'block';
+            chatbotInput.focus();
+        };
+        chatbotClose.onclick = function() {
+            chatbotModal.style.display = 'none';
+        };
+        chatbotForm.onsubmit = function(e) {
+            e.preventDefault();
+            const msg = chatbotInput.value.trim();
+            if (!msg) return;
+            chatbotBody.innerHTML += `<div style='margin-bottom:8px;'><b>You:</b> ${msg}</div>`;
+            chatbotInput.value = '';
+            fetch('/user/rag/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                },
+                body: JSON.stringify({ message: msg })
+            })
+            .then(r => r.json())
+            .then(d => {
+                chatbotBody.innerHTML += `<div style='margin-bottom:8px;'><b>Bot:</b> ${d.reply}</div>`;
+                chatbotBody.scrollTop = chatbotBody.scrollHeight;
+            })
+            .catch(() => {
+                chatbotBody.innerHTML += `<div style='margin-bottom:8px;color:red;'><b>Bot:</b> Error contacting assistant.</div>`;
+            });
+        };
+    }
+});
 </script>
+
+
 
 </body>
 </html>

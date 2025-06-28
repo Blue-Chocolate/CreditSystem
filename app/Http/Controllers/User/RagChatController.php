@@ -24,6 +24,7 @@ class RagChatController extends Controller
                 'is_offer_pool' => $product->is_offer_pool,
                 'reward_points' => $product->reward_points,
                 'category' => $product->category,
+                'url' => url('/user/products/' . $product->id),
                 'can_buy_with_credits' => $user->credit_points >= $product->price,
                 'can_buy_with_rewards' => $product->is_offer_pool && $user->reward_points >= $product->reward_points,
             ];
@@ -49,6 +50,10 @@ Available Products (with user ability to purchase):
 Available Credit Packages:
 " . json_encode($packages) . "
 
+When mentioning a product, always return the product name as a clickable Markdown link using the 'url' field, e.g. [Product Name](https://...).
+
+You can also answer questions about the user's balance, points, and what they can buy.
+If the user asks about a product, show the link.
 Answer user questions clearly and only based on this data. Don't invent products or prices.";
 
         $response = Http::withHeaders([

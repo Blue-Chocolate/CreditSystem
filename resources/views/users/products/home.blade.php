@@ -6,10 +6,12 @@
     @foreach ($products as $product)
         <div class="col-md-4 mb-3">
             <div class="card">
-                @if($product->image)
-                    <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top">
-                @elseif($product->image_url)
-                    <img src="{{ $product->image_url }}" class="card-img-top">
+                @if($product->image_url)
+                    <img src="{{ $product->image_url }}" class="card-img-top" alt="{{ $product->name }}">
+                @elseif($product->image)
+                    <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top" alt="{{ $product->name }}">
+                @else
+                    <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No image">
                 @endif
                 <div class="card-body">
                     <h5>{{ $product->name }}</h5>
@@ -32,6 +34,10 @@
             </div>
         </div>
     @endforeach
+</div>
+
+<div class="mt-4 d-flex justify-content-center">
+    {{ $products->links() }}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

@@ -88,10 +88,12 @@
                 <td>{{ $product->is_offer_pool ? 'Yes' : 'No' }}</td>
                 <td>{{ $product->reward_points ?? '-' }}</td>
                 <td>
-                    @if ($product->image)
-                        <img src="{{ asset('storage/' . $product->image) }}" width="50">
+                    @if ($product->image_url)
+                        <img src="{{ $product->image_url }}" width="50" alt="{{ $product->name }}">
+                    @elseif ($product->image)
+                        <img src="{{ asset('storage/' . $product->image) }}" width="50" alt="{{ $product->name }}">
                     @else
-                        No Image
+                        <img src="https://via.placeholder.com/50x50?text=No+Image" width="50" alt="No image">
                     @endif
                 </td>
                 <td>
