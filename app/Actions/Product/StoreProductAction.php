@@ -24,6 +24,8 @@ class StoreProductAction
     'reward_points' => 'nullable|integer|required_if:is_offer_pool,1',
     'image' => 'nullable|image|max:2048',
     'image_url' => 'nullable|url',
+    'description' => 'nullable|string|max:1000',
+    
 ]);
 
             $data['is_offer_pool'] = $request->has('is_offer_pool');

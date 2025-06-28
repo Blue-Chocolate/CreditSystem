@@ -22,7 +22,12 @@ class UpdateProductAction
                 'reward_points' => 'nullable|integer|required_if:is_offer_pool,1',
                 'image' => 'nullable|image|max:2048',
                 'category' => 'required|string|max:255',
+                'description' => 'nullable|string|max:1000',
+                'image_url' => 'nullable|url',
+                'is_offer_pool' => 'boolean',
             ]);
+
+            $data['image_url'] = $request->input('image_url', null);
 
             // Correct handling of offer pool value
             $data['is_offer_pool'] = (bool) $request->input('is_offer_pool', 0);

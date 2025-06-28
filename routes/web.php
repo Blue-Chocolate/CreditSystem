@@ -6,6 +6,9 @@ use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\PackageController;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+use App\Http\Controllers\User\RagController;
+use App\Http\Controllers\User\RagChatController;
 
 // Redirect root to login page
 Route::get('/', function () {
@@ -60,16 +63,19 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
     Route::get('packages/history', [PackageController::class, 'history'])->name('packages.history');
 
     // User RAG
-    Route::get('rag', [\App\Http\Controllers\User\RagController::class, 'index'])->name('rag');
-
-    // User chatbot endpoint
-    Route::post('rag/chat', [\App\Http\Controllers\User\RagChatController::class, 'chat']);
+     Route::get('rag', [\App\Http\Controllers\User\RagController::class, 'index'])->name('rag.index');
+    Route::post('rag/chat', [\App\Http\Controllers\User\RagChatController::class, 'chat'])->name('rag.chat');
 
     // Balance checker (optional)
     Route::get('balance', function() {
         $user = Auth::user();
         return 'Current balance: $' . ($user ? $user->credit_balance : 'N/A');
     });
+
+    // Product search endpoint (GET /user/products/search?query=...)
+    Route::get('products/search', [\App\Http\Controllers\User\ProductSearchController::class, 'search'])->name('products.search');
+    // AI recommendation endpoint (POST /user/ai/recommendation)
+    Route::post('ai/recommendation', [\App\Http\Controllers\User\AIRecommendationController::class, 'recommend'])->name('ai.recommendation');
 });
 
 // Global search
@@ -89,9 +95,11 @@ Route::get('/unauthorized', function () {
 // Redirect after login based on role
 Route::get('/redirect-after-login', function () {
     if (Auth::check()) {
-        return Auth::user()->role === 'admin'
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('user.dashboard');
+        $user = Auth::user();
+        if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('user.dashboard', [], false)->setTargetUrl('/user/home');
     }
     return redirect('/login');
 })->name('redirect.after.login');

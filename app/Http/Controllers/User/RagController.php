@@ -1,10 +1,12 @@
-<?php
+<?php 
+
 
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Product;
+use App\Models\CreditPackage;
 
 class RagController extends Controller
 {
@@ -12,6 +14,9 @@ class RagController extends Controller
     {
         $user = Auth::user();
         $products = Product::all();
-        return view('users.rag', compact('user', 'products'));
+        $packages = CreditPackage::all();
+
+        return view('users.rag', compact('user', 'products', 'packages'));
     }
 }
+

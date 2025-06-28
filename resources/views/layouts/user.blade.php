@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>4Sale</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
+
     <style>
         :root {
             --primary-color: #74b9ff;
@@ -198,6 +201,7 @@
 }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
@@ -212,13 +216,12 @@
         </form>
 
         <div class="ms-auto d-flex align-items-center flex-wrap">
-            <a href="{{ route('user.orders.index') }}" title="View Current Orders">Orders</a>
-            <a href="{{ route('user.orders.history') }}" title="Order History">History</a>
-            <a href="{{ route('user.packages.index') }}" title="Buy Credit Packages">Packages</a>
-            <a href="{{ route('user.packages.history') }}" title="Your Package History">Pkg History</a>
+            <a href="{{ url('/user/home') }}" title="Home">Home</a>
+
+           <a href="{{ route('user.orders.index') }}" title="Order History">History</a>
+            <a href="{{ route('user.packages.index') }}" title="Buy Credit Packages" id="packages">Packages</a>
             <a href="{{ route('user.cart.show') }}" title="View Cart">Cart</a>
             <a href="{{ route('search.index') }}" title="Search Again">Search</a>
-            <a href="{{ route('user.dashboard') }}" class="btn btn-link">Home</a>
 
             <div class="user-info" title="Your account details">
                 <strong>{{ auth()->user()->name }}</strong> |
@@ -289,6 +292,12 @@
 <div id="user-chatbot-icon" style="position:fixed;bottom:30px;right:30px;z-index:9999;cursor:pointer;">
     <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Chatbot" width="60" height="60">
 </div>
+
+<!-- Floating User Guide Icon -->
+<div id="user-guide-icon" style="position:fixed;bottom:30px;right:100px;z-index:9999;cursor:pointer;">
+    <img src="https://cdn-icons-png.flaticon.com/512/633/633759.png" alt="User Guide" width="60" height="60">
+</div>
+
 <!-- Chatbot Modal -->
 <div id="user-chatbot-modal" style="display:none;position:fixed;bottom:100px;right:30px;width:350px;max-width:90vw;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,0.2);z-index:10000;overflow:hidden;">
     <div style="background:#007bff;color:#fff;padding:12px 16px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;">
@@ -301,87 +310,83 @@
         <button class="btn btn-primary" type="submit">Send</button>
     </form>
 </div>
+
+<!-- Guide Tour on First Login -->
+@if(session('show_driver_tour'))
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('search-input');
-    const list = document.getElementById('autocomplete-list');
-    let timeout = null;
-    input.addEventListener('input', function() {
-        clearTimeout(timeout);
-        const val = this.value;
-        if (!val) { list.innerHTML = ''; return; }
-        timeout = setTimeout(() => {
-            fetch(`{{ route('search.autocomplete') }}?q=${encodeURIComponent(val)}`)
-                .then(res => res.json())
-                .then(data => {
-                    list.innerHTML = '';
-                    data.forEach(item => {
-                        const el = document.createElement('button');
-                        el.type = 'button';
-                        el.className = 'list-group-item list-group-item-action';
-                        el.innerHTML = item.replace(new RegExp(val, 'gi'), match => `<mark>${match}</mark>`);
-                        el.onclick = () => { input.value = item; list.innerHTML = ''; document.getElementById('search-form').submit(); };
-                        list.appendChild(el);
-                    });
-                });
-        }, 200);
+    // First-time login tour
+    const firstLoginTour = new Driver({
+        animate: true,
+        allowClose: false,
+        showProgress: true,
+        steps: [
+            { 
+                element: '.user-info', 
+                popover: { 
+                    title: 'Your Balance', 
+                    description: 'Here you can see your balance, credit points, and reward points.', 
+                    position: 'bottom' 
+                } 
+            },
+            { 
+                element: '#packages', 
+                popover: { 
+                    title: 'Credit Packages', 
+                    description: 'Buy credit packages to purchase products and earn reward points.', 
+                    position: 'bottom' 
+                } 
+            },
+            { 
+                element: '#cart-sidebar', 
+                popover: { 
+                    title: 'Your Cart', 
+                    description: 'Manage your cart items and checkout from here.', 
+                    position: 'left' 
+                } 
+            }
+        ]
     });
-    document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !list.contains(e.target)) list.innerHTML = '';
-    });
+    firstLoginTour.drive();
 });
 </script>
+@endif
 
+<!-- User Guide Icon Click Handler (keep this OUTSIDE the @if block) -->
 <script>
-// Draggable cart sidebar
-(function() {
-    const sidebar = document.getElementById('cart-sidebar');
-    let isDragging = false, offsetX = 0, offsetY = 0;
-    sidebar.style.cursor = 'move';
-    sidebar.addEventListener('mousedown', function(e) {
-        isDragging = true;
-        offsetX = e.clientX - sidebar.offsetLeft;
-        offsetY = e.clientY - sidebar.offsetTop;
-        sidebar.style.zIndex = 2000;
+document.getElementById('user-guide-icon').onclick = function() {
+    const tour = new Driver({
+        animate: true,
+        allowClose: true,
+        showProgress: true,
+        steps: [
+            { 
+                element: '.user-info', 
+                popover: { 
+                    title: 'Your Balance', 
+                    description: 'Here you can see your balance, credit points, and reward points.', 
+                    position: 'bottom' 
+                } 
+            },
+            { 
+                element: '#packages', 
+                popover: { 
+                    title: 'Credit Packages', 
+                    description: 'Buy credit packages to purchase products and earn reward points.', 
+                    position: 'bottom' 
+                } 
+            },
+            { 
+                element: '#cart-sidebar', 
+                popover: { 
+                    title: 'Your Cart', 
+                    description: 'Manage your cart items and checkout from here.', 
+                    position: 'left' 
+                } 
+            }
+        ]
     });
-    document.addEventListener('mousemove', function(e) {
-        if (isDragging) {
-            sidebar.style.left = (e.clientX - offsetX) + 'px';
-            sidebar.style.top = (e.clientY - offsetY) + 'px';
-            sidebar.style.right = 'auto';
-        }
-    });
-    document.addEventListener('mouseup', function() {
-        isDragging = false;
-    });
-})();
-</script>
-
-<script>
-document.getElementById('user-chatbot-icon').onclick = function() {
-    document.getElementById('user-chatbot-modal').style.display = 'block';
-};
-document.getElementById('user-chatbot-close').onclick = function() {
-    document.getElementById('user-chatbot-modal').style.display = 'none';
-};
-document.getElementById('user-chatbot-form').onsubmit = function(e) {
-    e.preventDefault();
-    var input = document.getElementById('user-chatbot-input');
-    var body = document.getElementById('user-chatbot-body');
-    var msg = input.value.trim();
-    if (!msg) return;
-    body.innerHTML += '<div style="margin-bottom:8px;"><b>You:</b> '+msg+'</div>';
-    input.value = '';
-    fetch('/user/rag/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json','X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content},
-        body: JSON.stringify({message: msg})
-    })
-    .then(r=>r.json())
-    .then(d=>{
-        body.innerHTML += '<div style="margin-bottom:8px;"><b>Bot:</b> '+d.reply+'</div>';
-        body.scrollTop = body.scrollHeight;
-    });
+    tour.drive();
 };
 </script>
 

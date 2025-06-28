@@ -9,6 +9,7 @@
     .btn { margin-top: 20px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .btn:hover { background-color: #0056b3; }
     img { margin-top: 10px; max-width: 100px; }
+    #image-preview img { max-width: 100%; height: auto; }
 </style>
 
 <h2>{{ isset($product) ? 'Edit' : 'Create' }} Product</h2>
@@ -43,16 +44,39 @@
 </select>
         <label>Stock</label>
         <input type="number" name="stock" value="{{ old('stock', $product->stock ?? 0) }}" required>
+        <label for="description">Description</label>
+        <textarea name="description" id="description" rows="4">{{ old('description', $product->description ?? '') }}</textarea>
+        <div class="mb-3">
+            <label>Image (Upload a file or provide a URL)</label>
+            <input type="file" name="image" accept="image/*" onchange="previewImage(event)">
+            <div style="text-align:center; margin: 10px 0;">OR</div>
+            <input type="url" name="image_url" placeholder="https://example.com/image.jpg" value="{{ old('image_url', $product->image_url ?? '') }}">
+            <div id="image-preview">
+                @if (isset($product) && $product->image)
+                    <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image">
+                @elseif (isset($product) && $product->image_url)
+                    <img src="{{ $product->image_url }}" alt="Current Image">
+                @endif
+            </div>
 
-        <label>Image (Upload a file or provide a URL)</label>
-        <input type="file" name="image">
-        <div style="text-align:center; margin: 10px 0;">OR</div>
-        <input type="url" name="image_url" placeholder="https://example.com/image.jpg" value="{{ old('image_url', $product->image_url ?? '') }}">
-        @if (isset($product) && $product->image)
-            <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image">
-        @elseif (isset($product) && $product->image_url)
-            <img src="{{ $product->image_url }}" alt="Current Image">
-        @endif
+        </div>
+        <script>
+        function previewImage(event) {
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            if (event.target.files && event.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+        </script>
 
         <label>
             <input type="checkbox" name="is_offer_pool" value="1" {{ old('is_offer_pool', $product->is_offer_pool ?? false) ? 'checked' : '' }}>

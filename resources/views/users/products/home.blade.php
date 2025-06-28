@@ -8,6 +8,8 @@
             <div class="card">
                 @if($product->image)
                     <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top">
+                @elseif($product->image_url)
+                    <img src="{{ $product->image_url }}" class="card-img-top">
                 @endif
                 <div class="card-body">
                     <h5>{{ $product->name }}</h5>

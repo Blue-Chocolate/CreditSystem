@@ -1,11 +1,11 @@
-<?php
-
+<?php 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Product;
+use Illuminate\Support\Facades\Validator;
 
 class RagChatController extends Controller
 {
@@ -13,28 +13,74 @@ class RagChatController extends Controller
     {
         $msg = strtolower($request->input('message'));
         $reply = '';
-        if (str_contains($msg, 'user')) {
-            $users = User::where('name', 'like', "%$msg%")
-                ->orWhere('email', 'like', "%$msg%")
-                ->limit(5)->get();
-            if ($users->isEmpty()) {
-                $reply = "No users found.";
+
+        if (str_starts_with($msg, 'search users')) {
+            $query = $this->extractQuery($msg);
+            $users = User::where('name', 'like', "%{$query}%")
+                         ->orWhere('email', 'like', "%{$query}%")
+                         ->limit(10)->get();
+            $reply = $users->isEmpty() ? "No users found." : $users->map(fn($u) => "{$u->id}) {$u->name} - {$u->email}")->implode("\n");
+
+        } elseif (str_starts_with($msg, 'search products')) {
+            $query = $this->extractQuery($msg);
+            $products = Product::where('name', 'like', "%{$query}%")->limit(10)->get();
+            $reply = $products->isEmpty() ? "No products found." : $products->map(fn($p) => "{$p->id}) {$p->name} - {$p->price} EGP")->implode("\n");
+
+        } elseif (str_starts_with($msg, 'create user')) {
+            $data = $this->parseParams($msg);
+            $validator = Validator::make($data, [
+                'name' => 'required',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:6',
+            ]);
+
+            if ($validator->fails()) {
+                $reply = "Error: " . implode(' ', $validator->errors()->all());
             } else {
-                $reply = "Users: ";
-                $reply .= $users->pluck('name')->implode(', ');
+                User::create(['name' => $data['name'], 'email' => $data['email'], 'password' => bcrypt($data['password'])]);
+                $reply = "User created successfully.";
             }
-        } elseif (str_contains($msg, 'product')) {
-            $products = Product::where('name', 'like', "%$msg%")
-                ->limit(5)->get();
-            if ($products->isEmpty()) {
-                $reply = "No products found.";
+
+        } elseif (str_starts_with($msg, 'delete user')) {
+            $data = $this->parseParams($msg);
+            $user = User::find($data['id'] ?? null);
+            if ($user) {
+                $user->delete();
+                $reply = "User deleted.";
             } else {
-                $reply = "Products: ";
-                $reply .= $products->pluck('name')->implode(', ');
+                $reply = "User not found.";
             }
+
+        } elseif (str_starts_with($msg, 'update user')) {
+            $data = $this->parseParams($msg);
+            $user = User::find($data['id'] ?? null);
+            if ($user) {
+                $user->update(array_filter($data));
+                $reply = "User updated.";
+            } else {
+                $reply = "User not found.";
+            }
+
         } else {
-            $reply = "Ask me to search for users or products!";
+            $reply = "Commands I understand:\n- search users name=John\n- search products name=Hoodie\n- create user name=John email=john@example.com password=secret\n- delete user id=5\n- update user id=5 name=NewName";
         }
+
         return response()->json(['reply' => $reply]);
+    }
+
+    private function extractQuery($msg)
+    {
+        $parts = explode(' ', $msg, 3);
+        return $parts[2] ?? '';
+    }
+
+    private function parseParams($msg)
+    {
+        preg_match_all('/(\w+)=([^\s]+)/', $msg, $matches, PREG_SET_ORDER);
+        $params = [];
+        foreach ($matches as $match) {
+            $params[$match[1]] = $match[2];
+        }
+        return $params;
     }
 }

@@ -45,7 +45,8 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+        $request->session()->flash('show_driver_tour', true);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect('/user/home');
     }
 }

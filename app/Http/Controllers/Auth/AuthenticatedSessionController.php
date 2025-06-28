@@ -28,7 +28,19 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('redirect.after.login'));
+        return redirect()->intended('/user/home');
+    }
+
+    /**
+     * Handle actions after user is authenticated.
+     */
+    public function authenticated(Request $request, $user)
+    {
+        if ($user->first_login) {
+            $user->update(['first_login' => false]);
+            session()->flash('show_driver_tour', true);
+        }
+        // return redirect()->intended('/user/home');
     }
 
     /**

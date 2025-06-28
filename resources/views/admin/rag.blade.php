@@ -3,37 +3,26 @@
 @section('content')
 <h2>Admin RAG (Resource Access Gateway)</h2>
 
-<form method="GET" action="">
-    <div class="mb-3">
-        <label>Search Users</label>
-        <input type="text" name="user_query" value="{{ request('user_query') }}" class="form-control" placeholder="User name or email">
-    </div>
-    <div class="mb-3">
-        <label>Search Products</label>
-        <input type="text" name="product_query" value="{{ request('product_query') }}" class="form-control" placeholder="Product name">
-    </div>
-    <button class="btn btn-primary">Search</button>
-</form>
+<div class="mb-3">
+    <label>Chat with the System</label>
+    <input type="text" id="message" class="form-control" placeholder="e.g., search users name=John">
+</div>
+<button class="btn btn-primary" onclick="sendMessage()">Send</button>
 
-@if(isset($users))
-    <h4>Users</h4>
-    <ul>
-        @forelse($users as $user)
-            <li>{{ $user->name }} ({{ $user->email }})</li>
-        @empty
-            <li>No users found.</li>
-        @endforelse
-    </ul>
-@endif
+<div class="mt-3" id="chat-response" style="white-space: pre-line;"></div>
 
-@if(isset($products))
-    <h4>Products</h4>
-    <ul>
-        @forelse($products as $product)
-            <li>{{ $product->name }} - {{ $product->price }} EGP</li>
-        @empty
-            <li>No products found.</li>
-        @endforelse
-    </ul>
-@endif
+<script>
+function sendMessage() {
+    const msg = document.getElementById('message').value;
+    fetch("{{ route('admin.rag.chat') }}", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+        body: JSON.stringify({ message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('chat-response').innerText = data.reply;
+    });
+}
+</script>
 @endsection

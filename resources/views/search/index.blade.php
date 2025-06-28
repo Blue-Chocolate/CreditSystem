@@ -10,7 +10,11 @@
             <div class="col-md-2">
                 <select name="category" class="form-select" aria-label="Filter by category">
                     <option value="">All Categories</option>
-                    @foreach($categories as $cat)
+                    @php
+                        $extraCategories = ['Electronics', 'Fashion', 'Books', 'Home', 'Toys', 'Sports', 'Beauty', 'Groceries', 'Automotive', 'Music'];
+                        $allCategories = array_unique(array_merge($categories instanceof \Illuminate\Support\Collection ? $categories->toArray() : (array)$categories, $extraCategories));
+                    @endphp
+                    @foreach($allCategories as $cat)
                         <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
                     @endforeach
                 </select>
@@ -47,16 +51,19 @@
                     <div class="card h-100">
                         @if($product->image)
                             <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top" alt="{{ $product->name }}">
+                        @elseif($product->image_url)
+                            <img src="{{ $product->image_url }}" class="card-img-top" alt="{{ $product->name }}">
                         @endif
                         <div class="card-body">
                             <h5 class="card-title">{!! str_ireplace(request('q'), '<mark>'.e(request('q')).'</mark>', $product->name) !!}</h5>
-                            <p class="card-text text-muted mb-1">Category: {{ $product->category }}</p>
+                            <p class="card-text text-muted mb-1">Category: <span class="badge bg-secondary">{{ $product->category }}</span></p>
+                            <p class="card-text mb-1">Description: {{ $product->description }}</p>
                             <p class="card-text mb-1">Price: <strong>${{ $product->price }}</strong></p>
-                            <p class="card-text mb-1">Stock: <span class="badge bg-info">{{ $product->stock }}</span></p>
+                            <p class="card-text mb-1">Credit Points Price: <span class="badge bg-info">{{ $product->price }}</span></p>
                             @if($product->is_offer_pool)
                                 <span class="badge bg-success mb-1">Offer Pool</span>
+                                <span class="badge bg-warning mb-1">Reward Points: {{ $product->reward_points }}</span>
                             @endif
-                            <span class="badge bg-secondary mb-1">Reward: {{ $product->reward_points }}</span>
                         </div>
                         <div class="card-footer bg-white border-0">
                             <form method="POST" action="{{ route('user.cart.add') }}">

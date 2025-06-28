@@ -29,6 +29,14 @@ class CreateOrderAction
             }
         }
 
+        // Check stock before proceeding
+        foreach ($cart->items as $cartItem) {
+            $product = $cartItem->product;
+            if ($product && $product->stock !== null && $cartItem->quantity > $product->stock) {
+                return ['success' => false, 'message' => "Not enough stock for {$product->name}. Available: {$product->stock}, requested: {$cartItem->quantity}"];
+            }
+        }
+
         // Deduct based on payment method
         match ($paymentMethod) {
             'cash' => $user->credit_balance -= $total,
@@ -56,6 +64,12 @@ class CreateOrderAction
         ]);
 
         foreach ($cart->items as $cartItem) {
+            // Reduce product stock
+            $product = $cartItem->product;
+            if ($product && $product->stock !== null) {
+                $product->stock = max(0, $product->stock - $cartItem->quantity);
+                $product->save();
+            }
             $order->items()->create([
                 'product_id' => $cartItem->product_id,
                 'quantity' => $cartItem->quantity,

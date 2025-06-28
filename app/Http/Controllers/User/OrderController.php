@@ -95,6 +95,12 @@ class OrderController extends Controller
             ]);
 
             foreach ($cart->items as $item) {
+                // Reduce product stock
+                $product = $item->product;
+                if ($product && $product->stock !== null) {
+                    $product->stock = max(0, $product->stock - $item->quantity);
+                    $product->save();
+                }
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
