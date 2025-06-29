@@ -42,7 +42,14 @@ class AuthenticatedSessionController extends Controller
             }
             session()->forget('cart');
         }
-        return redirect()->intended('/user/cart');
+        // Redirect based on role
+        if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        }
+        if (property_exists($user, 'role') && $user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->intended('/user/home');
     }
 
     /**

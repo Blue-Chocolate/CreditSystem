@@ -183,7 +183,6 @@
             <a href="{{ route('admin.packages.index') }}" class="{{ request()->routeIs('admin.packages.*') ? 'active-link' : '' }}">Packages</a>
             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active-link' : '' }}">Orders</a>
             <a href="{{ url('admin/users') }}" class="{{ request()->is('admin/users*') ? 'active-link' : '' }}">Users</a>
-            <a href="{{ url('admin/settings') }}" class="{{ request()->is('admin/settings*') ? 'active-link' : '' }}">Settings</a>
             <form action="{{ route('logout') }}" method="POST" class="mt-3">
                 @csrf
                 <button class="btn btn-danger w-100">Logout</button>
