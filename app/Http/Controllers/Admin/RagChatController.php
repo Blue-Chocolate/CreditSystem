@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -9,77 +10,152 @@ use Illuminate\Support\Facades\Validator;
 
 class RagChatController extends Controller
 {
+    protected $modelMap = [
+    'user' => \App\Models\User::class,
+    'users' => \App\Models\User::class,
+    'product' => \App\Models\Product::class,
+    'products' => \App\Models\Product::class,
+];
+
     public function chat(Request $request)
     {
         $msg = strtolower($request->input('message'));
         $reply = '';
 
-        if (str_starts_with($msg, 'search users')) {
-            $query = $this->extractQuery($msg);
-            $users = User::where('name', 'like', "%{$query}%")
-                         ->orWhere('email', 'like', "%{$query}%")
-                         ->limit(10)->get();
-            $reply = $users->isEmpty() ? "No users found." : $users->map(fn($u) => "{$u->id}) {$u->name} - {$u->email}")->implode("\n");
+        // how many users/products
+        if (preg_match('/how many (\w+) (are there|do we have)/', $msg, $matches)) {
+            $reply = $this->count($matches[1]);
 
-        } elseif (str_starts_with($msg, 'search products')) {
-            $query = $this->extractQuery($msg);
-            $products = Product::where('name', 'like', "%{$query}%")->limit(10)->get();
-            $reply = $products->isEmpty() ? "No products found." : $products->map(fn($p) => "{$p->id}) {$p->name} - {$p->price} EGP")->implode("\n");
+        // get users/products with optional filters
+        } elseif (preg_match('/^(get|find) (\w+)(.*)$/', $msg, $matches)) {
+            $reply = $this->get($matches[2], trim($matches[3]));
 
-        } elseif (str_starts_with($msg, 'create user')) {
-            $data = $this->parseParams($msg);
-            $validator = Validator::make($data, [
-                'name' => 'required',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:6',
-            ]);
+        // create user/product
+        } elseif (preg_match('/^create (\w+)/', $msg, $matches)) {
+            $reply = $this->create($matches[1], $msg);
 
-            if ($validator->fails()) {
-                $reply = "Error: " . implode(' ', $validator->errors()->all());
-            } else {
-                User::create(['name' => $data['name'], 'email' => $data['email'], 'password' => bcrypt($data['password'])]);
-                $reply = "User created successfully.";
-            }
+        // update user/product
+        } elseif (preg_match('/^update (\w+)/', $msg, $matches)) {
+            $reply = $this->update($matches[1], $msg);
 
-        } elseif (str_starts_with($msg, 'delete user')) {
-            $data = $this->parseParams($msg);
-            $user = User::find($data['id'] ?? null);
-            if ($user) {
-                $user->delete();
-                $reply = "User deleted.";
-            } else {
-                $reply = "User not found.";
-            }
+        // delete user/product
+        } elseif (preg_match('/^delete (\w+)/', $msg, $matches)) {
+            $reply = $this->delete($matches[1], $msg);
 
-        } elseif (str_starts_with($msg, 'update user')) {
-            $data = $this->parseParams($msg);
-            $user = User::find($data['id'] ?? null);
-            if ($user) {
-                $user->update(array_filter($data));
-                $reply = "User updated.";
-            } else {
-                $reply = "User not found.";
-            }
-
+        // help message
         } else {
-            $reply = "Commands I understand:\n- search users name=John\n- search products name=Hoodie\n- create user name=John email=john@example.com password=secret\n- delete user id=5\n- update user id=5 name=NewName";
+            $reply = "Commands I understand:\n"
+                   . "- get users\n"
+                   . "- get products price=250\n"
+                   . "- how many users do we have\n"
+                   . "- create user name=John email=john@example.com password=secret\n"
+                   . "- create product name=Hoodie price=200\n"
+                   . "- update user id=5 name=NewName\n"
+                   . "- update product id=3 price=199\n"
+                   . "- delete user id=5\n"
+                   . "- delete product id=3";
         }
 
         return response()->json(['reply' => $reply]);
     }
 
-    private function extractQuery($msg)
+    private function count($entity)
     {
-        $parts = explode(' ', $msg, 3);
-        return $parts[2] ?? '';
+        $model = $this->modelMap[$entity] ?? null;
+        if (!$model) return "I don't recognize '$entity'";
+        $count = $model::count();
+        return "There are $count $entity.";
+    }
+
+    private function get($entity, $filters)
+    {
+        $model = $this->modelMap[$entity] ?? null;
+        if (!$model) return "Model '$entity' not supported.";
+
+        $query = $model::query();
+
+        if ($filters) {
+            preg_match_all('/(\w+)\s*=\s*("[^"]+"|\'[^\']+\'|[^\s]+)/', $filters, $matches, PREG_SET_ORDER);
+            foreach ($matches as $m) {
+                $query->where($m[1], trim($m[2], "\"'"));
+            }
+        }
+
+        $results = $query->limit(10)->get();
+        if ($results->isEmpty()) return "No results found.";
+
+        return $results->map(function ($item) {
+            return collect($item->toArray())->map(fn($v, $k) => "$k=$v")->implode(', ');
+        })->implode("\n");
+    }
+
+    private function create($entity, $msg)
+    {
+        $model = $this->modelMap[$entity] ?? null;
+        if (!$model) return "Model '$entity' not supported.";
+
+        $data = $this->parseParams($msg);
+
+        if ($entity === 'users') {
+            $validator = Validator::make($data, [
+                'name' => 'required',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:6',
+            ]);
+            if ($validator->fails()) {
+                return "Error: " . implode(' ', $validator->errors()->all());
+            }
+            $data['password'] = bcrypt($data['password']);
+        }
+
+        $model::create($data);
+        return ucfirst($entity) . " created successfully.";
+    }
+
+    private function update($entity, $msg)
+    {
+        $model = $this->modelMap[$entity] ?? null;
+        if (!$model) return "Model '$entity' not supported.";
+
+        $data = $this->parseParams($msg);
+        $id = $data['id'] ?? null;
+        if (!$id) return "Missing ID.";
+
+        unset($data['id']);
+
+        if ($entity === 'users' && isset($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        }
+
+        $record = $model::find($id);
+        if (!$record) return ucfirst($entity) . " not found.";
+
+        $record->update($data);
+        return ucfirst($entity) . " updated.";
+    }
+
+    private function delete($entity, $msg)
+    {
+        $model = $this->modelMap[$entity] ?? null;
+        if (!$model) return "Model '$entity' not supported.";
+
+        $data = $this->parseParams($msg);
+        $id = $data['id'] ?? null;
+        if (!$id) return "Missing ID.";
+
+        $record = $model::find($id);
+        if (!$record) return ucfirst($entity) . " not found.";
+
+        $record->delete();
+        return ucfirst($entity) . " deleted.";
     }
 
     private function parseParams($msg)
     {
-        preg_match_all('/(\w+)=([^\s]+)/', $msg, $matches, PREG_SET_ORDER);
+        preg_match_all('/(\w+)\s*=\s*("[^"]+"|\'[^\']+\'|[^\s]+)/', $msg, $matches, PREG_SET_ORDER);
         $params = [];
         foreach ($matches as $match) {
-            $params[$match[1]] = $match[2];
+            $params[$match[1]] = trim($match[2], '"\'');
         }
         return $params;
     }

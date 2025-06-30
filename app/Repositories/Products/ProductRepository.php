@@ -11,7 +11,7 @@ class ProductRepository
     public function all()
     {
         try {
-            return Product::latest()->get();
+           return Product::latest()->paginate(5);
         } catch (Exception $e) {
             Log::error('Fetching products failed: ' . $e->getMessage());
             return collect();

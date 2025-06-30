@@ -55,6 +55,11 @@ class SearchController extends Controller
             $builder->orderByRaw('CASE WHEN name = ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END', [$query, "%$query%"]);
         }
 
+        // Limit query length to prevent overly long queries
+        if ($query && mb_strlen($query) > 255) {
+            return back()->withErrors(['q' => 'Search query too long.']);
+        }
+
         $products = $builder->paginate(12); // Enforce pagination, max 12 per page
         $categories = Product::distinct()->pluck('category');
 

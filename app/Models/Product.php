@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model
 {
-    
-    use Searchable;
+    use HasFactory,Searchable, SoftDeletes ;
 
     protected $fillable = ['name', 'price', 'stock', 'is_offer_pool', 'reward_points', 'image', 'image_url', 'category'];
     protected $casts = [

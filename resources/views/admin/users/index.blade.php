@@ -46,6 +46,14 @@
                 <div class="text-muted">No orders yet.</div>
             @endforelse
         </div>
+        <div class="mt-2">
+            @if(auth()->user()->hasRole('SuperAdmin'))
+                <form action="{{ route('admin.users.impersonate', $user->id) }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-warning">Impersonate</button>
+                </form>
+            @endif
+        </div>
     </div>
 @endforeach
 <div class="d-flex justify-content-center mt-4">

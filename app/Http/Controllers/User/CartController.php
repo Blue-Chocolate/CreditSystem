@@ -103,9 +103,10 @@ class CartController extends Controller
         $user = Auth::user();
         $item = CartItem::with('product')->findOrFail($id);
         $product = $item->product ? \App\Models\Product::find($item->product->id) : null;
-        if (!$product || !$product->is_offer_pool) {
+        // Check product existence, offer pool, and not expired
+        if (!$product || !$product->is_offer_pool || (isset($product->expires_at) && $product->expires_at < now())) {
             $item->delete();
-            return back()->with('error', 'This product is not eligible for reward redemption. It may have been removed from the offer pool.');
+            return back()->with('error', 'This product is not eligible for reward redemption. It may have been removed from the offer pool or expired.');
         }
         if ($item->quantity > 1) {
             return back()->with('error', 'You can only redeem one of this offer pool item.');
@@ -114,10 +115,18 @@ class CartController extends Controller
         if ($requiredPoints <= 0) {
             return back()->with('error', 'Invalid reward point value for this product.');
         }
+        // Prevent redeeming more points than owned
         if ($user->reward_points < $requiredPoints) {
             return back()->with('error', 'Not enough reward points to redeem this item.');
         }
-        \DB::transaction(function () use ($user, $item, $requiredPoints) {
+        // Prevent simultaneous redemption conflict (lock row)
+        \DB::transaction(function () use ($user, $item, $requiredPoints, $product) {
+            $lockedProduct = \App\Models\Product::where('id', $product->id)->lockForUpdate()->first();
+            if ($lockedProduct->stock <= 0) {
+                throw new \Exception('This product is out of stock.');
+            }
+            $lockedProduct->stock -= 1;
+            $lockedProduct->save();
             $user->reward_points = max(0, $user->reward_points - $requiredPoints);
             $user->save();
             $item->delete();

@@ -9,7 +9,7 @@ class HomeController extends Controller
 {
   public function index()
 {
-    $products = Product::latest()->paginate(12); // Show 12 products per page
+    $products = Product::latest()->paginate(9); // Show 12 products per page
     return view('users.products.home', compact('products'));
 }
     public function show(Product $product)

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ElSalam Admin</title>
+    <title>Rio Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @vite(['resources/css/app.css', 'resources/js/app.js']) {{-- Breeze assets --}}
     <style>
@@ -177,12 +177,15 @@
 
     {{-- Sidebar --}}
     <aside class="sidebar">
-        <div class="logo">ElSalam Admin</div>
+        <div class="logo">Rio Admin</div>
         <nav class="mt-4">
-            <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active-link' : '' }}">Products</a>
             <a href="{{ route('admin.packages.index') }}" class="{{ request()->routeIs('admin.packages.*') ? 'active-link' : '' }}">Packages</a>
+            <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active-link' : '' }}">Products</a>
             <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active-link' : '' }}">Orders</a>
             <a href="{{ url('admin/users') }}" class="{{ request()->is('admin/users*') ? 'active-link' : '' }}">Users</a>
+            <a href="{{ route('admin.superadmin.users') }}" class="{{ request()->routeIs('admin.superadmin.users') ? 'active-link' : '' }}">
+                User Management
+            </a>
             <form action="{{ route('logout') }}" method="POST" class="mt-3">
                 @csrf
                 <button class="btn btn-danger w-100">Logout</button>
@@ -193,10 +196,27 @@
     {{-- Main Content --}}
     <div class="main">
         <header class="header">
-            <form method="GET" action="{{ route('admin.search') }}">
-                <input type="text" name="q" class="form-control" placeholder="Search users, products, packages by name or ID..." value="{{ request('q') }}" autocomplete="off" aria-label="Admin search">
-                <button class="btn btn-outline-primary" type="submit">Search</button>
-            </form>
+            @if(request()->routeIs('admin.products.*'))
+                <form method="GET" action="{{ route('admin.products.index') }}">
+                    <input type="text" name="q" class="form-control" placeholder="Search products by ID, name, offer pool, etc..." value="{{ request('q') }}" autocomplete="off">
+                    <select name="offer_pool" class="form-control">
+                        <option value="">All</option>
+                        <option value="1" {{ request('offer_pool')=='1' ? 'selected' : '' }}>Offer Pool</option>
+                        <option value="0" {{ request('offer_pool')==='0' ? 'selected' : '' }}>Regular</option>
+                    </select>
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            @elseif(request()->routeIs('admin.users.*') || request()->is('admin/users*'))
+                <form method="GET" action="{{ url('admin/users') }}">
+                    <input type="text" name="q" class="form-control" placeholder="Search users by ID or name..." value="{{ request('q') }}" autocomplete="off">
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            @elseif(request()->routeIs('admin.packages.*'))
+                <form method="GET" action="{{ route('admin.packages.index') }}">
+                    <input type="text" name="q" class="form-control" placeholder="Search packages by ID or name..." value="{{ request('q') }}" autocomplete="off">
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            @endif
         </header>
 
         <main>

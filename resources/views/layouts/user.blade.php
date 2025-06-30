@@ -233,7 +233,7 @@
             </div>
             <form action="{{ route('logout') }}" method="POST" class="d-inline ms-3" title="Logout">
                 @csrf
-                <bu class="btn btn-danger btn-sm">Logout</bu    tton>
+                <button type="submit" class="btn btn-danger btn-sm">Logout</button>
             </form>
             @endif
         </div>
@@ -250,7 +250,13 @@
         $isGuest = !auth()->check();
         $cartSidebarItems = $isGuest ? collect(session('cart', [])) : (isset($cartSidebarItems) ? collect($cartSidebarItems) : collect());
         $cartSidebarTotal = $cartSidebarItems->sum(function($item) use ($isGuest) {
-            return ($isGuest ? $item['price'] : $item->product->price) * ($isGuest ? $item['quantity'] : $item->quantity);
+            if ($isGuest) {
+                return $item['price'] * $item['quantity'];
+            } else if (isset($item->product) && $item->product) {
+                return $item->product->price * $item->quantity;
+            } else {
+                return 0; // skip missing products
+            }
         });
     @endphp
     @if($cartSidebarItems->count())
@@ -266,6 +272,7 @@
                         <button class="btn btn-sm btn-outline-secondary" onclick="updateGuestCart('{{ $item['id'] }}', 'increment')">+</button>
                         <button class="btn btn-sm btn-outline-danger" onclick="removeGuestCart('{{ $item['id'] }}')" title="Remove item">&times;</button>
                     @else
+                        @if(isset($item->product) && $item->product)
                         <form action="{{ route('user.cart.update', ['id' => $item->id, 'action' => 'decrement']) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('PATCH')
@@ -282,9 +289,10 @@
                             @method('DELETE')
                             <button class="btn btn-sm btn-outline-danger" title="Remove item">&times;</button>
                         </form>
+                        @endif
                     @endif
                 </div>
-                <span>${{ number_format($isGuest ? $item['price'] * $item['quantity'] : $item->product->price * $item->quantity, 2) }}</span>
+                <span>${{ number_format($isGuest ? $item['price'] * $item['quantity'] : (isset($item->product) && $item->product ? $item->product->price * $item->quantity : 0), 2) }}</span>
             </div>
             @endif
         @endforeach
@@ -292,7 +300,11 @@
             Total: ${{ number_format($cartSidebarTotal, 2) }}
         </div>
         <div class="d-grid mt-2">
-            <a href="{{ route('user.cart.show') }}" class="btn btn-primary">Checkout</a>
+            @if($isGuest)
+                <a href="{{ route('login') }}" class="btn btn-primary">Checkout</a>
+            @else
+                <a href="{{ route('user.cart.show') }}" class="btn btn-primary">Checkout</a>
+            @endif
         </div>
     @else
         <div class="cart-footer">Cart is empty</div>

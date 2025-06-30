@@ -13,9 +13,16 @@ class OrderTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(\Database\Seeders\RolesSeeder::class);
+    }
+
     public function test_user_can_checkout_with_valid_cart()
     {
         $user = User::factory()->create(['credit_balance' => 100]);
+        $user->assignRole('user');
         $product = Product::factory()->create(['price' => 10, 'stock' => 5]);
         $cart = Cart::create(['user_id' => $user->id]);
         $cart->items()->create(['product_id' => $product->id, 'quantity' => 2]);
@@ -32,6 +39,7 @@ class OrderTest extends TestCase
     public function test_checkout_fails_with_insufficient_balance()
     {
         $user = User::factory()->create(['credit_balance' => 5]);
+        $user->assignRole('user');
         $product = Product::factory()->create(['price' => 10, 'stock' => 5]);
         $cart = Cart::create(['user_id' => $user->id]);
         $cart->items()->create(['product_id' => $product->id, 'quantity' => 1]);
@@ -46,6 +54,7 @@ class OrderTest extends TestCase
     public function test_checkout_fails_if_product_removed()
     {
         $user = User::factory()->create(['credit_balance' => 100]);
+        $user->assignRole('user');
         $product = Product::factory()->create(['price' => 10, 'stock' => 5]);
         $cart = Cart::create(['user_id' => $user->id]);
         $cart->items()->create(['product_id' => $product->id, 'quantity' => 1]);

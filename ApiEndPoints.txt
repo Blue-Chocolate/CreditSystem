@@ -56,3 +56,53 @@ Auth/Profile
 GET /profile — Edit profile
 PATCH /profile — Update profile
 DELETE /profile — Delete profile
+
+
+
+
+
+
+
+
+
+POST /api/login
+Body: { "email": "user@example.com", "password": "password" }
+Returns: Auth token (if using Sanctum or Passport)
+2. Products
+GET /api/products
+List all products (with filters, pagination)
+GET /api/products/{id}
+Get a single product
+POST /api/products
+Create a product (admin only)
+PUT/PATCH /api/products/{id}
+Update a product (admin only)
+DELETE /api/products/{id}
+Delete a product (admin only)
+3. Cart
+GET /api/cart
+Get current user's cart
+POST /api/cart/add
+Add product to cart (body: { "id": product_id })
+POST /api/cart/update/{id}/{action}
+Update quantity (action = increment/decrement)
+DELETE /api/cart/remove/{id}
+Remove item from cart
+4. Orders
+GET /api/orders
+List user orders
+POST /api/orders
+Place an order (body: { "total": ..., "payment_method": ... })
+GET /api/orders/{id}
+Get order details
+5. Packages
+GET /api/packages
+List available packages
+POST /api/packages/buy/{id}
+Buy a package
+6. User
+GET /api/user
+Get current user info
+7. Logout
+POST /api/logout
+Logout user (if using Sanctum, send token in header)

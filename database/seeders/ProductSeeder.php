@@ -139,7 +139,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => null,
         'image' => null,
-        'image_url' => 'https://cdn.mos.cms.futurecdn.net/n4DWbBkjKAtNfQUv6ZWRCD.jpg',
+        'image_url' => 'https://m.media-amazon.com/images/I/61Hj5MLhJcL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Full-frame mirrorless camera with dual processors and 273-point AF.'
     ],
     [
@@ -150,7 +150,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => null,
         'image' => null,
-        'image_url' => 'https://assets.bose.com/content/dam/Bose_DAM/Web/consumer_electronics/global/products/headphones/quietcomfort_ultra_headphones/product_silo_images/QCUH_Black_EC_hero.psd/jcr:content/renditions/cq5dam.web.320.320.png',
+        'image_url' => 'https://m.media-amazon.com/images/I/51f7KKP25PL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Premium noise-canceling headphones with spatial audio.'
     ],
     [
@@ -161,7 +161,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => true,
         'reward_points' => 500,
         'image' => null,
-        'image_url' => 'https://dlcdnwebimgs.asus.com/gain/591B6F4E-31DE-4DD2-BE30-601B3DB0289C/fwebp',
+        'image_url' => 'https://m.media-amazon.com/images/I/71ogQaX4AzL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'High-performance gaming laptop with RTX 4080 and Mini LED display.'
     ],
     [
@@ -172,7 +172,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => null,
         'image' => null,
-        'image_url' => 'https://store.google.com/product/images/google_pixel_8_pro_thumbnail.png',
+        'image_url' => 'https://m.media-amazon.com/images/I/615rI0PoyOL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Google’s flagship phone with Tensor G3 and advanced AI features.'
     ],
     [
@@ -183,7 +183,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => null,
         'image' => null,
-        'image_url' => 'https://gopro.com/content/dam/gopro/us/en/products/cameras/hero12-black/gallery/hero12-black-gallery-1.jpg',
+        'image_url' => 'https://m.media-amazon.com/images/I/41Yf9ZT2pNL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Rugged action camera with 5.3K video and stabilization.'
     ],
     [
@@ -194,7 +194,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => 50,
         'image' => null,
-        'image_url' => 'https://m.media-amazon.com/images/I/71NZxODnaJL._AC_SL1500_.jpg',
+        'image_url' => 'https://m.media-amazon.com/images/I/61P+C8bAhaL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Portable waterproof Bluetooth speaker with deep bass.'
     ],
     [
@@ -205,7 +205,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => null,
         'image' => null,
-        'image_url' => 'https://resource.logitech.com/content/dam/logitech/en/products/mice/mx-master-3s/gallery/mx-master-3s-gallery-graphite-top.png',
+        'image_url' => 'https://m.media-amazon.com/images/I/61xKiCADfpL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Advanced ergonomic mouse with silent clicks and MagSpeed scroll.'
     ],
     [
@@ -216,7 +216,7 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => true,
         'reward_points' => 30,
         'image' => null,
-        'image_url' => 'https://m.media-amazon.com/images/I/61fIhATcKDL._AC_SL1000_.jpg',
+        'image_url' => 'https://m.media-amazon.com/images/I/515+sHffstL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Waterproof e-reader with a 6.8” display and adjustable warm light.'
     ],
     [
@@ -227,13 +227,17 @@ class ProductSeeder extends Seeder
         'is_offer_pool' => false,
         'reward_points' => 150,
         'image' => null,
-        'image_url' => 'https://m.media-amazon.com/images/I/61HXuYPZayL._AC_SL1500_.jpg',
+        'image_url' => 'https://m.media-amazon.com/images/I/51amrGM8QiL._AC_UL480_FMwebp_QL65_.jpg',
         'description' => 'Compact drone with 4K HDR video and omnidirectional obstacle sensing.'
     ],
 ];
 
-        foreach ($products as $data) {
-            Product::create($data);
+        foreach ($products as $product) {
+            // Skip if a product with the same name and category already exists
+            if (Product::where('name', $product['name'])->where('category', $product['category'])->exists()) {
+                continue;
+            }
+            Product::create($product);
         }
     }
 }

@@ -13,10 +13,15 @@ class CreateCreditPackagesTable extends Migration {
             $table->integer('credits');
             $table->integer('reward_points')->default(0);
             $table->timestamps();
+            $table->unsignedBigInteger('locked_by')->nullable();
+            $table->timestamp('locked_at')->nullable();
         });
     }
 
     public function down(): void {
         Schema::dropIfExists('credit_packages');
+        Schema::table('credit_packages', function (Blueprint $table) {
+            $table->dropColumn(['locked_by', 'locked_at']);
+        });
     }
 };

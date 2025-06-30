@@ -15,13 +15,12 @@
         <tr>
             <td>{{ $package->id }}</td>
             <td>{{ $package->name ?? 'N/A' }}</td>
-            <td>${{ $package->price ?? '-' }}</td>
+           
             <td>{{ $package->credits ?? '-' }}</td>
-    
+             <td>${{ $package->price ?? '-' }}</td>
             <td>{{ $package->reward_points?? '-'}}</td>
-            
             <td>
-                <form action="{{ route('user.packages.buy', $package->id) }}" method="POST">
+                <form action="{{ route('user.packages.buy', $package->id) }}" method="POST" onsubmit="return confirmPackageBuy(this, '{{ $package->name }}', '{{ $package->price }}');">
                     @csrf
                     <button class="btn btn-success">Buy</button>
                 </form>
@@ -35,4 +34,9 @@
         {{ $packages->links() }}
     @endif
 </div>
+<script>
+function confirmPackageBuy(form, name, price) {
+    return confirm('Are you sure you want to buy the package "' + name + '" for $' + price + '?');
+}
+</script>
 @endsection

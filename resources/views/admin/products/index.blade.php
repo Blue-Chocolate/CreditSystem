@@ -60,7 +60,17 @@
 
     <button type="submit" class="btn">Search</button>
 </form>
+@if(session('error'))
+    <div style="background-color: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; border: 1px solid #f5c6cb;">
+        {{ session('error') }}
+    </div>
+@endif
 
+@if(session('success'))
+    <div style="background-color: #d4edda; color: #155724; padding: 10px; margin: 10px 0; border: 1px solid #c3e6cb;">
+        {{ session('success') }}
+    </div>
+@endif
 <a href="{{ route('admin.products.create') }}" class="btn">+ Add Product</a>
 
 <table>

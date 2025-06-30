@@ -23,7 +23,9 @@ class CartTest extends TestCase
 
     public function test_logged_in_user_cart_merges_on_login()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'password' => bcrypt('password'),
+        ]);
         $product = Product::factory()->create();
         session(['cart' => [
             $product->id => [
@@ -34,7 +36,6 @@ class CartTest extends TestCase
                 'image' => $product->image,
             ]
         ]]);
-        $this->actingAs($user);
         $this->post(route('login'), ['email' => $user->email, 'password' => 'password']);
         $cart = Cart::where('user_id', $user->id)->first();
         $this->assertNotNull($cart);

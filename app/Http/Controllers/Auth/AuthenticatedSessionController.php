@@ -23,34 +23,37 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
-        $request->session()->regenerate();
+{
+    $request->authenticate();
+    $request->session()->regenerate();
 
-        // Merge guest cart (session) into user cart
-        $user = Auth::user();
-        $sessionCart = session('cart', []);
-        if (!empty($sessionCart)) {
-            $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
-            foreach ($sessionCart as $item) {
-                $cartItem = \App\Models\CartItem::firstOrNew([
-                    'cart_id' => $cart->id,
-                    'product_id' => $item['id'],
-                ]);
-                $cartItem->quantity = ($cartItem->quantity ?? 0) + $item['quantity'];
-                $cartItem->save();
-            }
-            session()->forget('cart');
+    $user = Auth::user();
+
+    // Merge guest cart (session) into user cart
+    $sessionCart = session('cart', []);
+    if (!empty($sessionCart)) {
+        $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
+        foreach ($sessionCart as $item) {
+            $cartItem = \App\Models\CartItem::firstOrNew([
+                'cart_id' => $cart->id,
+                'product_id' => $item['id'],
+            ]);
+            $cartItem->quantity = ($cartItem->quantity ?? 0) + $item['quantity'];
+            $cartItem->save();
         }
-        // Redirect based on role
-        if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
-            return redirect()->route('admin.dashboard');
-        }
-        if (property_exists($user, 'role') && $user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
+        session()->forget('cart');
+    }
+
+    // Redirect based on role using Spatie Permission properly
+    if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['admin', 'SuperAdmin'])) {
+        return redirect()->route('admin.dashboard');
+    }
+    if (method_exists($user, 'hasRole') && $user->hasRole('user')) {
         return redirect()->intended('/user/home');
     }
+    // fallback
+    return redirect('/');
+}
 
     /**
      * Handle actions after user is authenticated.

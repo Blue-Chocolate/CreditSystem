@@ -47,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
                 }
                 $view->with('cartSidebarItems', $cartSidebarItems)->with('cartSidebarTotal', $cartSidebarTotal);
             }
+            
         });
+        
     }
 }

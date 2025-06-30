@@ -63,4 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User guide feedback (optional backend)
     Route::post('feedback', [UserController::class, 'feedback']);
+
+    // User RAG chat endpoint
+    Route::post('rag/chat', [\App\Http\Controllers\Api\RagController::class, 'chat']);
 });
